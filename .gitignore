@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment configuration (Contains sensitive API keys & secrets)
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+noteversity-backend/.env
+noteversity-backend/.env.*
+
+# Uploads
+noteversity-backend/uploads/*
+!noteversity-backend/uploads/.gitkeep
+
+# Data (ignored so users can clone cleanly and add their own PDFs)
+noteversity-backend/data/*.json
+!noteversity-backend/data/.gitkeep
+
+# Test artifacts
+gui-test-screenshots/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db

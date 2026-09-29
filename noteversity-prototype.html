@@ -1,0 +1,2061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noteversity — Parul University</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A4D68'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-size='38' font-weight='bold' fill='%23088395' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<style>
+  :root{
+    --ink:#0A4D68;
+    --ink-dark:#052F40;
+    --paper:#EBF4F6;
+    --paper-raised:#FFFFFF;
+    --rule:#CCE5E7;
+    --amber:#088395;
+    --amber-dark:#056676;
+    --green:#2E8B57;
+    --green-soft:#E0F2E9;
+    --red:#C84B31;
+    --red-soft:#FDE8EC;
+    --text:#0E2938;
+    --text-soft:#426B7E;
+    --text-faint:#7E9EAE;
+    --head:#0E2938;
+    --shadow: 0 1px 3px rgba(10,77,104,0.06), 0 6px 18px rgba(10,77,104,0.07);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;overflow:hidden;}
+  body{
+    font-family:'IBM Plex Sans',sans-serif;
+    background:var(--paper);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  .disp{font-family:'Space Grotesk',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input{font-family:inherit;}
+  ::selection{background:var(--amber);color:var(--head);}
+  :focus-visible{outline:2px solid var(--amber-dark);outline-offset:2px;}
+
+  /* Sleek modern custom scrollbar to remove thick double scrollbars */
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(10,77,104,0.22);border-radius:4px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(10,77,104,0.45);}
+  *{scrollbar-width:thin;scrollbar-color:rgba(10,77,104,0.22) transparent;}
+
+  /* ---------- APP SHELL ---------- */
+  #app-shell{display:flex;height:100vh;width:100vw;overflow:hidden;}
+
+  .sidebar{
+    width:230px;flex-shrink:0;background:var(--ink);color:#EDE7D9;
+    display:flex;flex-direction:column;
+    height:100vh;overflow-y:auto;
+  }
+  .sidebar-brand{padding:22px 20px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.08);}
+  .sidebar-brand .glyph{width:30px;height:30px;border:1.5px solid var(--amber);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--amber);}
+  .sidebar-brand .name{font-weight:700;font-size:16px;}
+
+  .nav-tabs{padding:18px 0;flex:1;}
+  .nav-tab{
+    display:flex;align-items:center;gap:11px;
+    padding:11px 20px 11px 22px;margin:2px 0 2px 8px;
+    font-size:13.5px;font-weight:500;color:#C9C3B4;
+    border-radius:3px 0 0 3px;position:relative;
+    transition:background .12s,color .12s;
+    cursor:pointer;
+  }
+  .nav-tab .ic{width:17px;text-align:center;font-size:14px;}
+  .nav-tab:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .nav-tab.active{background:var(--paper);color:var(--head);font-weight:600;}
+  .nav-tab.active::after{
+    content:"";position:absolute;right:-8px;top:0;bottom:0;width:8px;background:var(--paper);
+  }
+  .nav-tab .badge{
+    margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;
+    padding:1px 6px;border-radius:20px;
+  }
+  .sidebar-user{
+    padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08);
+    display:flex;align-items:center;gap:10px;
+  }
+  .avatar{
+    width:32px;height:32px;border-radius:50%;background:var(--amber);color:var(--head);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;flex-shrink:0;
+  }
+  .sidebar-user .u-name{font-size:12.5px;font-weight:600;color:#fff;}
+  .sidebar-user .u-sub{font-size:10.5px;color:#A9A290;}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+  .topbar{
+    display:flex;align-items:center;gap:16px;
+    padding:12px 28px;border-bottom:1px solid var(--rule);background:var(--paper-raised);
+    flex-shrink:0;z-index:5;
+  }
+  .topbar h2{margin:0;font-size:17px;font-weight:700;color:var(--head);}
+  .search-box{
+    flex:1;max-width:380px;display:flex;align-items:center;gap:8px;
+    background:#fff;border:1.5px solid var(--rule);border-radius:20px;padding:7px 14px;
+  }
+  .search-box input{border:none;outline:none;flex:1;font-size:13.5px;background:transparent;}
+  .search-box .ic{color:var(--text-faint);}
+  .stamp-badge{
+    margin-left:auto;display:flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:600;color:var(--green);background:var(--green-soft);
+    padding:5px 10px;border-radius:20px;
+  }
+
+  .view{padding:22px 28px;flex:1;min-height:0;overflow-y:auto;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* Chat view full height containment without outer scrolling or empty bottom space */
+  #view-chat.active{
+    display:flex;
+    flex-direction:column;
+    padding:10px 22px 12px;
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+    height:100%;
+  }
+
+  /* dashboard */
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px;}
+  @media(max-width:900px){.stat-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{
+    background:var(--paper-raised);border:1px solid var(--rule);border-radius:4px;padding:16px 18px;
+    box-shadow:var(--shadow);
+  }
+  .stat-card .stat-lbl{font-size:11px;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;}
+  .stat-card .stat-val{font-size:26px;font-weight:700;color:var(--head);margin-top:6px;font-family:'Space Grotesk',sans-serif;}
+  .stat-card .stat-sub{font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+
+  .section-title{
+    font-size:14px;font-weight:700;color:var(--head);margin:0 0 12px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .section-title .see-all{font-size:12px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
+
+  .dash-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:22px;}
+  @media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}
+
+  .card-list{background:var(--paper-raised);border:1px solid var(--rule);border-radius:4px;box-shadow:var(--shadow);overflow:hidden;}
+  .list-row{
+    display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--rule);
+  }
+  .list-row:last-child{border-bottom:none;}
+  .file-ic{
+    width:34px;height:34px;border-radius:4px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+  }
+  .row-main{flex:1;min-width:0;}
+  .row-main .t{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .row-main .s{font-size:11px;color:var(--text-faint);margin-top:2px;}
+  .row-cta{font-size:11px;font-weight:700;color:var(--ink);text-decoration:none;flex-shrink:0;}
+
+  .quick-links{display:flex;flex-direction:column;gap:8px;}
+  .qlink{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 14px;background:var(--paper-raised);border:1px solid var(--rule);border-radius:4px;
+    font-size:13px;font-weight:600;color:var(--head);
+  }
+  .qlink .tag{font-size:10.5px;font-weight:700;color:var(--amber-dark);background:#D7F1F2;padding:2px 8px;border-radius:20px;}
+
+  /* filter chips */
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+  .chip{
+    padding:7px 14px;border-radius:20px;border:1.5px solid var(--rule);background:#fff;
+    font-size:12.5px;font-weight:600;color:var(--text-soft);
+  }
+  .chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+  .toolbar-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:14px;flex-wrap:wrap;}
+  .btn-amber{
+    background:var(--amber);border:none;color:var(--head);font-weight:700;font-size:13px;
+    padding:10px 18px;border-radius:3px;display:flex;align-items:center;gap:7px;
+  }
+  .btn-amber:hover{background:var(--amber-dark);color:#fff;}
+
+  .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .doc-card{
+    background:var(--paper-raised);border:1px solid var(--rule);border-radius:4px;padding:16px;
+    box-shadow:var(--shadow);position:relative;
+  }
+  .doc-spine{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:4px 0 0 4px;}
+  .doc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-left:6px;}
+  .doc-subject{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-faint);}
+  .doc-title{font-size:14px;font-weight:700;color:var(--head);margin:4px 0 6px;padding-left:6px;line-height:1.35;}
+  .doc-meta{font-size:11.5px;color:var(--text-soft);padding-left:6px;margin-bottom:14px;}
+  .doc-foot{display:flex;justify-content:space-between;align-items:center;padding-left:6px;}
+  .doc-dl{font-size:11px;color:var(--text-faint);display:flex;align-items:center;gap:5px;}
+  .doc-btn{
+    font-size:11.5px;font-weight:700;color:#fff;background:var(--ink);border:none;
+    padding:7px 12px;border-radius:3px;
+  }
+  .doc-btn:hover{background:var(--ink-dark);}  /* chat */
+  .chat-wrap{
+    display:flex;flex-direction:column;
+    background:var(--paper-raised);border:1px solid var(--rule);border-radius:6px;box-shadow:var(--shadow);
+    overflow:hidden;flex:1;min-height:0;height:100%;
+  }
+  .chat-main{display:flex;flex-direction:column;min-width:0;min-height:0;flex:1;height:100%;}
+  .chat-head{padding:12px 18px;border-bottom:1px solid var(--rule);font-size:14px;font-weight:700;color:var(--head);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  
+  .chat-msgs{flex:1;min-height:0;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;}
+  .msg{display:flex;gap:10px;max-width:86%;}
+  .msg.me{align-self:flex-end;flex-direction:row-reverse;}
+  .msg-sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(10,77,104,0.12);}
+  .source-pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:12px;background:#eef7f8;color:var(--ink);border:1px solid var(--rule);display:inline-flex;align-items:center;gap:4px;text-decoration:none;transition:background .15s;}
+  .source-pill:hover{background:#d7f1f2;}
+  .chat-typing{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-soft);padding:8px 12px;background:#fff;border:1px solid var(--rule);border-radius:10px;width:fit-content;}
+  .typing-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);animation:typingPulse 0.9s infinite alternate;}
+  .typing-dot:nth-child(2){animation-delay:0.2s;}
+  .typing-dot:nth-child(3){animation-delay:0.4s;}
+  @keyframes typingPulse{0%{opacity:0.3;transform:translateY(0);}100%{opacity:1;transform:translateY(-3px);}}
+  .starter-wrap{background:#fff;border:1px solid var(--rule);border-radius:6px;padding:20px;max-width:600px;margin:20px auto 0;box-shadow:var(--shadow);}
+  .starter-title{font-size:15px;font-weight:700;color:var(--head);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+  .starter-desc{font-size:12.5px;color:var(--text-soft);line-height:1.5;margin-bottom:14px;}
+  .starter-prompts{display:flex;flex-direction:column;gap:8px;}
+  .starter-btn{text-align:left;background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:9px 13px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;}
+  .starter-btn:hover{background:#d7f1f2;border-color:var(--amber);}
+  .msg{display:flex;gap:10px;max-width:78%;}
+  .msg .avatar{width:28px;height:28px;font-size:11px;}
+  .msg .bubble{background:#fff;border:1px solid var(--rule);padding:9px 13px;border-radius:3px 10px 10px 10px;font-size:13px;line-height:1.5;}
+  .msg .who{font-size:11px;font-weight:700;color:var(--ink);margin-bottom:3px;}
+  .msg .time{font-size:9.5px;color:var(--text-faint);margin-top:4px;}
+  .msg.me{align-self:flex-end;flex-direction:row-reverse;}
+  .msg.me .bubble{background:var(--ink);color:#fff;border-color:var(--ink);border-radius:10px 3px 10px 10px;}
+  .msg.me .time{color:#C9C3B4;}
+  .chat-input{display:flex;gap:10px;padding:12px 18px;border-top:1px solid var(--rule);align-items:center;background:#fff;flex-shrink:0;}
+  .chat-input input{flex:1;padding:11px 16px;border:1.5px solid var(--rule);border-radius:24px;font-size:13.5px;font-family:inherit;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+  .chat-input input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,27,61,0.08);}
+  
+  /* Chat send & stop button */
+  .chat-send-btn{
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 15px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background 0.22s ease, transform 0.15s ease, box-shadow 0.22s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .chat-send-btn:hover{
+    background: #272727;
+    transform: scale(1.05);
+  }
+  .chat-send-btn:active{
+    transform: scale(0.95);
+  }
+  .chat-send-btn .btn-icon{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .chat-send-btn .send-icon{
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .chat-send-btn .stop-icon{
+    opacity: 0;
+    transform: scale(0.7);
+    pointer-events: none;
+  }
+  
+  /* When bot is generating: Button turns round with spinning ring and stop square */
+  .chat-send-btn.is-generating{
+    background: #0f172a;
+    box-shadow: 0 0 0 2px rgba(15,23,42,0.18), 0 4px 12px rgba(0,0,0,0.22);
+  }
+  .chat-send-btn.is-generating:hover{
+    background: #dc2626; /* Warning red highlight on hover to clearly signify Stop action */
+    box-shadow: 0 0 14px rgba(220,38,38,0.55);
+    transform: scale(1.08);
+  }
+  .chat-send-btn.is-generating .send-icon{
+    opacity: 0;
+    transform: scale(0.7);
+    pointer-events: none;
+  }
+  .chat-send-btn.is-generating .stop-icon{
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  
+  /* Animated round spinner that turns round while answering */
+  .chat-send-btn .stop-spin-svg{
+    position: absolute;
+    width: 38px;
+    height: 38px;
+    animation: chatSpinRound 1.1s linear infinite;
+  }
+  @keyframes chatSpinRound{
+    from{ transform: rotate(0deg); }
+    to{ transform: rotate(360deg); }
+  }
+  .chat-send-btn .stop-square{
+    width: 11px;
+    height: 11px;
+    background: #ffffff;
+    border-radius: 2px;
+    z-index: 2;
+    transition: transform 0.15s ease;
+  }
+  .chat-send-btn.is-generating:hover .stop-square{
+    transform: scale(1.15);
+  }
+
+
+  /* profile */
+  .profile-card{background:var(--paper-raised);border:1px solid var(--rule);border-radius:4px;box-shadow:var(--shadow);padding:26px;max-width:520px;}
+  .profile-top{display:flex;align-items:center;gap:16px;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--rule);}
+  .profile-top .avatar{width:56px;height:56px;font-size:19px;}
+  .profile-top .p-name{font-size:17px;font-weight:700;color:var(--head);}
+  .profile-top .p-role{font-size:12px;color:var(--text-soft);margin-top:2px;}
+  .p-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--rule);font-size:13px;}
+  .p-row:last-child{border-bottom:none;}
+  .p-row .k{color:var(--text-soft);font-weight:600;}
+  .p-row .v{color:var(--text);font-weight:600;}
+
+  .empty{text-align:center;padding:50px 20px;color:var(--text-faint);}
+  .empty .ic{font-size:32px;margin-bottom:10px;}
+
+  /* ---------- LOADING SKELETONS ---------- */
+  .skel-card{pointer-events:none;}
+  .skel-line{
+    height:10px;border-radius:4px;margin-bottom:10px;
+    background:linear-gradient(90deg, rgba(10,77,104,0.08) 25%, rgba(10,77,104,0.20) 37%, rgba(10,77,104,0.08) 63%);
+    background-size:400% 100%;
+    animation:skelShimmer 1.2s ease infinite;
+  }
+  @keyframes skelShimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(20,38,63,0.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .modal-bg.show{display:flex;}
+  .modal{background:var(--paper-raised);border-radius:5px;padding:26px;width:100%;max-width:420px;box-shadow:0 10px 40px rgba(0,0,0,0.25);}
+  .modal h3{margin:0 0 16px;font-size:16px;font-weight:700;color:var(--head);}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px;}
+  .field input{width:100%;padding:11px 12px;border:1.5px solid var(--rule);border-radius:3px;font-size:13.5px;background:#fff;}
+  .modal .field select{width:100%;padding:11px 12px;border:1.5px solid var(--rule);border-radius:3px;font-size:13.5px;background:#fff;}
+  .modal-actions{display:flex;gap:10px;margin-top:18px;}
+  .btn-ghost{flex:1;background:none;border:1.5px solid var(--rule);color:var(--text-soft);font-weight:600;padding:11px;border-radius:3px;font-size:13px;}
+  .btn-primary{padding:11px;border:none;border-radius:3px;background:var(--ink);color:#fff;font-size:13.5px;font-weight:600;flex:1;}
+  .btn-primary:hover{background:var(--ink-dark);}
+
+  .toast{
+    position:fixed;bottom:24px;right:24px;background:var(--ink-dark);color:#fff;
+    padding:13px 18px;border-radius:4px;font-size:13px;font-weight:500;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25);z-index:60;
+    display:flex;align-items:center;gap:10px;
+    opacity:0;transform:translateY(10px);transition:all .25s;
+    pointer-events:none;
+  }
+  .toast.show{opacity:1;transform:translateY(0);}
+
+  /* ---------- LOGIN SCREEN & TRANSITIONS ---------- */
+  #login-screen{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    background:linear-gradient(135deg, #052F40 0%, #0A4D68 40%, #088395 100%);
+    padding:30px 20px;
+    z-index:1000;
+    transition:opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #login-screen.screen-exit{
+    opacity:0;
+    transform:scale(0.96) translateY(-20px);
+    pointer-events:none;
+  }
+  #login-screen.hidden{display:none;}
+
+  .login-card{
+    margin:auto;
+    background:#fff;border-radius:8px;padding:32px 30px 28px;width:100%;max-width:420px;
+    box-shadow:0 12px 48px rgba(5,47,64,0.3);
+    transition:transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .login-card.card-exit{
+    transform:scale(0.92) translateY(-30px);
+    opacity:0;
+  }
+
+  .login-brand{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .login-brand .glyph{width:34px;height:34px;border:2px solid var(--amber);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--amber);}
+  .login-brand .name{font-weight:700;font-size:18px;color:var(--head);}
+  .login-subtitle{font-size:12.5px;color:var(--text-soft);margin-bottom:24px;}
+
+  .auth-tabs{display:flex;border-bottom:2px solid var(--rule);margin-bottom:22px;}
+  .auth-tab{
+    flex:1;text-align:center;padding:10px 0;font-size:13.5px;font-weight:600;color:var(--text-faint);
+    cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s;
+  }
+  .auth-tab.active{color:var(--ink);border-bottom-color:var(--amber);}
+
+  .auth-form{display:none;}
+  .auth-form.active{display:block;}
+
+  .login-field{margin-bottom:14px;}
+  .login-field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:5px;}
+  .login-field input,.login-field select{
+    width:100%;padding:11px 12px;border:1.5px solid var(--rule);border-radius:4px;font-size:13.5px;
+    font-family:'IBM Plex Sans',sans-serif;background:#fff;transition:border-color .15s;
+  }
+  .login-field input:focus,.login-field select:focus{border-color:var(--amber);outline:none;}
+  .login-field .hint{font-size:10.5px;color:var(--text-faint);margin-top:4px;}
+
+  .btn-login{
+    width:100%;padding:12px;border:none;border-radius:4px;background:var(--amber);color:#fff;
+    font-size:14px;font-weight:700;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;
+    transition:background .15s,transform .1s;margin-top:4px;
+  }
+  .btn-login:hover{background:var(--amber-dark);}
+  .btn-login:active{transform:scale(0.99);}
+  .btn-login:disabled{opacity:0.6;cursor:not-allowed;}
+
+  .login-switch{text-align:center;margin-top:16px;font-size:12.5px;color:var(--text-soft);}
+  .login-switch a{color:var(--amber);font-weight:600;cursor:pointer;text-decoration:none;}
+  .login-switch a:hover{text-decoration:underline;}
+
+  .login-alert{
+    background:var(--red-soft);color:var(--red);padding:10px 12px;border-radius:4px;
+    font-size:12.5px;font-weight:500;margin-bottom:14px;display:none;
+  }
+  .login-alert.show{display:block;}
+
+  /* ---------- PASSWORD VISIBILITY TOGGLE ---------- */
+  .pw-wrap{position:relative;}
+  .pw-wrap input{padding-right:42px;}
+  .pw-toggle{
+    position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    background:none;border:none;font-size:15px;cursor:pointer;color:var(--text-faint);
+    padding:4px;line-height:1;border-radius:4px;
+  }
+  .pw-toggle:hover{color:var(--head);background:rgba(8,131,149,0.08);}
+
+  /* ---------- SHARED SMALL TOOLBAR BUTTON (dark-mode aware) ---------- */
+  .toolbar-btn{
+    background:var(--paper-raised);border:1.5px solid var(--rule);border-radius:4px;
+    padding:6px 10px;font-size:12px;font-weight:600;color:var(--text-soft);
+    cursor:pointer;font-family:inherit;transition:background .15s,color .15s;
+  }
+  .toolbar-btn:hover{background:rgba(8,131,149,0.08);color:var(--head);}
+
+  /* ---------- UPLOAD DROP ZONE ---------- */
+  .drop-zone{
+    border:2px dashed var(--rule);border-radius:6px;padding:22px 14px;
+    text-align:center;font-size:12.5px;color:var(--text-soft);cursor:pointer;
+    transition:border-color .15s,background .15s,color .15s;
+  }
+  .drop-zone:hover{border-color:var(--amber);}
+  .drop-zone.dragover{border-color:var(--amber);background:rgba(8,131,149,0.07);color:var(--head);}
+
+  /* ---------- APP SHELL ENTRANCE ANIMATION ---------- */
+  @keyframes appEnterAnim {
+    0% {
+      opacity: 0;
+      transform: translateY(28px) scale(0.985);
+      filter: blur(6px);
+    }
+    60% {
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+  .app-enter-anim {
+    animation: appEnterAnim 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* ---------- LOGOUT BUTTON ---------- */
+  .btn-logout{
+    display:flex;align-items:center;gap:8px;padding:10px 20px;margin:0 8px 14px;
+    font-size:12.5px;font-weight:600;color:#C9C3B4;background:none;border:1px solid rgba(255,255,255,0.12);
+    border-radius:3px;cursor:pointer;transition:background .12s,color .12s;
+  }
+  .btn-logout:hover{background:rgba(255,255,255,0.08);color:#fff;}
+
+  /* ---------- MOBILE / RESPONSIVE ---------- */
+  .sidebar-toggle{
+    display:none;background:#fff;border:1.5px solid var(--rule);border-radius:4px;
+    padding:7px 11px;font-size:16px;line-height:1;color:var(--head);
+    align-items:center;justify-content:center;
+  }
+  .sidebar-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(5,47,64,0.45);
+    z-index:90;opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  @media(max-width:900px){
+    .sidebar-toggle{display:inline-flex;}
+    .sidebar{
+      position:fixed;left:0;top:0;bottom:0;z-index:100;
+      transform:translateX(-105%);transition:transform .25s ease;
+      box-shadow:6px 0 24px rgba(0,0,0,0.2);height:100vh;
+    }
+    body.sidebar-open .sidebar{transform:translateX(0);}
+    body.sidebar-open .sidebar-backdrop{opacity:1;pointer-events:auto;}
+    .sidebar-backdrop{display:block;}
+    .topbar{padding:10px 14px;gap:10px;flex-wrap:wrap;}
+    .topbar h2{font-size:15px;}
+    .search-box{order:3;flex-basis:100%;max-width:none;padding:7px 12px;}
+    .view{padding:14px;}
+    #view-chat.active{padding:8px 10px 10px;}
+    .stat-row{gap:10px;margin-bottom:18px;}
+    .stat-card{padding:12px 14px;}
+    .stat-card .stat-val{font-size:22px;}
+    .msg{max-width:94%;}
+    .chat-head{padding:10px 12px;flex-wrap:wrap;gap:6px;}
+    .chat-msgs{padding:12px 12px;}
+    .chat-input{padding:10px 12px;}
+    .toolbar-row{gap:10px;}
+    .toast{left:14px;right:14px;bottom:14px;text-align:center;justify-content:center;}
+    .profile-card{padding:18px;}
+    .login-card{padding:26px 20px 22px;}
+  }
+  @media(max-width:480px){
+    .stat-row{grid-template-columns:1fr 1fr;}
+    .doc-grid{grid-template-columns:1fr;}
+    .dash-grid{gap:14px;}
+  }
+
+  /* ---------- DARK MODE ---------- */
+  body.dark{
+    --paper:#0B1720;
+    --paper-raised:#122531;
+    --rule:#21414F;
+    --ink:#0D2733;
+    --amber:#1E9DB2;
+    --amber-dark:#12808F;
+    --text:#D7E7ED;
+    --text-soft:#93B5C3;
+    --text-faint:#62889B;
+    --head:#CFE9EF;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 6px 18px rgba(0,0,0,0.4);
+    background:var(--paper);
+    color:var(--text);
+  }
+  body.dark .search-box,
+  body.dark .chip,
+  body.dark .msg .bubble,
+  body.dark .chat-typing,
+  body.dark .starter-wrap,
+  body.dark .chat-input,
+  body.dark .field input,
+  body.dark .modal .field select,
+  body.dark .login-field input,
+  body.dark .login-field select,
+  body.dark .sidebar-toggle,
+  body.dark .theme-toggle,
+  body.dark .toolbar-btn,
+  body.dark .drop-zone,
+  body.dark #chatSubjectSelect{ background:var(--paper-raised); }
+  body.dark .source-pill{ background:rgba(30,157,178,0.12); color:var(--head); }
+  body.dark .skel-line{
+    background:linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.13) 37%, rgba(255,255,255,0.05) 63%);
+    background-size:400% 100%;
+  }
+  body.dark .stamp-badge{ color:#7FD1A0; background:rgba(46,139,87,0.16); }
+  body.dark .qlink .tag{ background:rgba(30,157,178,0.16); }
+  body.dark .drop-zone.dragover{ background:rgba(30,157,178,0.10); }
+  body.dark .pw-toggle:hover{ color:var(--head); background:rgba(30,157,178,0.12); }
+  body.dark .toolbar-btn:hover{ color:var(--head); background:rgba(30,157,178,0.12); }
+
+  .theme-toggle{
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--paper-raised);border:1.5px solid var(--rule);border-radius:4px;
+    padding:6px 10px;font-size:14px;cursor:pointer;color:var(--text-soft);line-height:1;
+    transition:background .15s;
+  }
+  .theme-toggle:hover{ background:rgba(8,131,149,0.08); }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="glyph disp">N</div>
+      <div class="name disp">NOTEVERSITY</div>
+    </div>
+    <div class="login-subtitle">Parul University Academic Repository &amp; Batch Network</div>
+
+    <div class="login-alert" id="loginAlert"></div>
+
+    <div id="savedSessionNotice" style="display:none; background:rgba(8,131,149,0.08); border:1.5px solid var(--rule); border-radius:6px; padding:12px 14px; margin-bottom:14px; text-align:left;">
+      <div style="font-size:12px; font-weight:700; color:var(--head); margin-bottom:2px;">
+        👋 Welcome back, <span id="savedSessionName">User</span>!
+      </div>
+      <div style="font-size:11.5px; color:var(--text-soft); margin-bottom:10px;" id="savedSessionEmail"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-login" id="btnResumeSession" style="padding:7px 14px; font-size:12px; flex:1;" onclick="resumeSavedSession()">Enter Portal →</button>
+        <button class="btn-login" style="padding:7px 14px; font-size:12px; background:#C84B31; flex:1;" onclick="clearSavedSession()">Switch Account</button>
+      </div>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</div>
+      <div class="auth-tab" onclick="switchAuthTab('signup')">Create Account</div>
+    </div>
+
+    <div id="fileProtocolWarning" style="display:none; background:#FFF3CD; border:1px solid #FFE69C; color:#856404; padding:10px 12px; border-radius:4px; font-size:12px; margin-bottom:14px; line-height:1.4;">
+      ⚠️ <b>Notice:</b> You are opening this HTML file directly (<code>file://</code>). Some browsers block network calls from local files. Please open <a href="http://localhost:5000" style="color:#0A4D68; font-weight:700; text-decoration:underline;">http://localhost:5000</a> in your browser.
+    </div>
+
+    <!-- SIGN IN FORM -->
+    <div class="auth-form active" id="form-signin">
+      <div style="background:rgba(8,131,149,0.08); border:1.5px solid var(--rule); border-radius:6px; padding:12px 14px; margin-bottom:14px; cursor:pointer; transition:all 0.15s ease;" onclick="fillAdminCredentials()" title="Click to auto-fill demo admin credentials">
+        <div style="font-size:12px; font-weight:700; color:var(--head); margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;">
+          <span>🔑 Demo Admin Credentials</span>
+          <span style="font-size:11px; background:var(--amber); color:#fff; border-radius:3px; padding:2px 8px; font-weight:700;">⚡ Click to Fill</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text-soft); line-height:1.4;">
+          Email: <code style="font-weight:700; color:var(--ink);">admin@paruluniversity.ac.in</code><br>
+          Password: <code style="font-weight:700; color:var(--ink);">admin123</code>
+        </div>
+      </div>
+
+      <div class="login-field">
+        <label>College Email</label>
+        <input type="email" id="loginEmail" placeholder="yourname@paruluniversity.ac.in">
+        <div class="hint">Only @paruluniversity.ac.in emails are accepted</div>
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleSignIn()">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)" title="Show password">👁</button>
+        </div>
+      </div>
+      <button class="btn-login" id="btnSignIn" onclick="handleSignIn()">Sign In →</button>
+      <button class="btn-login" type="button" style="background:#088395; margin-top:8px;" onclick="fillAdminCredentials()">⚡ Fill Demo Admin Credentials</button>
+      <div class="login-switch">New student? <a onclick="switchAuthTab('signup')">Create an account</a></div>
+    </div>
+
+    <!-- SIGN UP FORM -->
+    <div class="auth-form" id="form-signup">
+      <div class="login-field">
+        <label>Full Name</label>
+        <input type="text" id="signupName" placeholder="e.g. Rohan Verma">
+      </div>
+      <div class="login-field">
+        <label>College Email</label>
+        <input type="email" id="signupEmail" placeholder="rohan@paruluniversity.ac.in">
+        <div class="hint">Must end with @paruluniversity.ac.in</div>
+      </div>
+      <div class="login-field">
+        <label>Create Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="signupPassword" placeholder="Minimum 6 characters">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('signupPassword', this)" title="Show password">👁</button>
+        </div>
+        <div class="hint">Must be at least 6 characters</div>
+      </div>
+      <div class="login-field">
+        <label>Confirm Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="signupConfirmPassword" placeholder="Re-enter your password" onkeydown="if(event.key==='Enter')handleSignUp()">
+          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('signupConfirmPassword', this)" title="Show password">👁</button>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>Roll Number</label>
+        <input type="text" id="signupRoll" placeholder="e.g. 2113105">
+      </div>
+      <div class="login-field">
+        <label>Branch</label>
+        <select id="signupBranch">
+          <option>Computer Science &amp; Engineering</option>
+          <option>Information Technology</option>
+          <option>Electronics &amp; Communication</option>
+          <option>Electrical Engineering</option>
+          <option>Mechanical Engineering</option>
+          <option>Civil Engineering</option>
+        </select>
+      </div>
+      <div class="login-field">
+        <label>Semester</label>
+        <select id="signupSemester" style="background:#f8fafc; color:var(--text); font-weight:600; cursor:not-allowed;" disabled>
+          <option value="5" selected>Semester 5 (Currently Active)</option>
+        </select>
+        <div class="hint" style="color:var(--amber); font-weight:600; margin-top:4px; font-size:11.5px;">
+          ⚡ Only Semester 5 is available currently. We are working on other semesters!
+        </div>
+      </div>
+      <button class="btn-login" id="btnSignUp" onclick="handleSignUp()">Create Account &amp; Enter Portal →</button>
+      <div class="login-switch">Already registered? <a onclick="switchAuthTab('signin')">Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app-shell" style="display:none;">
+  <div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="glyph">N</div>
+      <div class="name disp">NOTEVERSITY</div>
+    </div>
+    <nav class="nav-tabs">
+      <div class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')"><span class="ic">▤</span> Dashboard</div>
+      <div class="nav-tab" data-view="notes" onclick="switchView('notes')"><span class="ic">📘</span> Notes Library</div>
+      <div class="nav-tab" data-view="pyqs" onclick="switchView('pyqs')"><span class="ic">🗂</span> PYQ Bank</div>
+      <div class="nav-tab" data-view="chat" onclick="switchView('chat')"><span class="ic">💬</span> ChatBot</div>
+      <div class="nav-tab" data-view="profile" onclick="switchView('profile')"><span class="ic">👤</span> Profile</div>
+    </nav>
+    <div class="sidebar-user" style="cursor:pointer;" onclick="switchView('profile')" title="View profile">
+      <div class="avatar" id="sidebarAvatar">AR</div>
+      <div>
+        <div class="u-name" id="sidebarName">Parul Admin</div>
+        <div class="u-sub" id="sidebarSub">CSE · Sem 5 · Parul University</div>
+      </div>
+    </div>
+    <div style="padding: 6px 16px 14px;">
+      <button onclick="handleLogout()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:7px 12px; font-size:11.5px; font-weight:600; color:var(--text-soft); background:rgba(0,0,0,0.03); border:1px solid var(--rule); border-radius:4px; cursor:pointer; font-family:inherit; transition:all .15s;">
+        <span>🚪</span> Log Out / Switch Account
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button id="sidebarToggle" class="sidebar-toggle" onclick="toggleSidebar()" title="Menu" aria-label="Toggle menu">☰</button>
+      <h2 id="topbarTitle" class="disp">Dashboard</h2>
+      <div class="search-box">
+        <span class="ic">🔍</span>
+        <input placeholder="Search notes, PYQs, subjects…" id="globalSearch">
+      </div>
+      <button id="themeToggle" class="theme-toggle" style="margin-left:auto;" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      <button onclick="handleLogout()" style="display:flex; align-items:center; gap:6px; padding:6px 12px; font-size:12px; font-weight:600; color:var(--text-soft); background:var(--paper-raised); border:1px solid var(--rule); border-radius:4px; cursor:pointer; font-family:inherit;">
+        <span>🚪</span> Log out
+      </button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-lbl">Notes downloaded</div><div class="stat-val disp" id="statNotesDl">0</div><div class="stat-sub">From library</div></div>
+        <div class="stat-card"><div class="stat-lbl">PYQs solved</div><div class="stat-val disp" id="statPyqsDl">0</div><div class="stat-sub">From PYQ bank</div></div>
+        <div class="stat-card"><div class="stat-lbl">Total Resources</div><div class="stat-val disp" id="statTotalRes">0</div><div class="stat-sub">Across 6 subjects</div></div>
+        <div class="stat-card"><div class="stat-lbl">AI Questions</div><div class="stat-val disp" id="statChat">0</div><div class="stat-sub">Asked to your AI tutor</div></div>
+      </div>
+
+      <div class="dash-grid">
+        <div>
+          <div class="section-title">Recently downloaded <span class="see-all" onclick="switchView('notes')">View notes library</span></div>
+          <div class="card-list" id="recentList"></div>
+        </div>
+        <div>
+          <div class="section-title">Jump to a subject</div>
+          <div class="quick-links" id="quickLinks"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="view" id="view-notes">
+      <div class="chip-row" id="notesChips"></div>
+      <div class="toolbar-row">
+        <div style="font-size:13px;color:var(--text-soft);"><b id="notesCount">0</b> resources found</div>
+        <button class="btn-amber" id="btnUploadNotes" onclick="openUpload('note')">＋ Upload notes</button>
+      </div>
+      <div class="doc-grid" id="notesGrid"></div>
+    </div>
+
+    <!-- PYQS -->
+    <div class="view" id="view-pyqs">
+      <div class="chip-row" id="pyqChips"></div>
+      <div class="toolbar-row">
+        <div style="font-size:13px;color:var(--text-soft);"><b id="pyqCount">0</b> papers found</div>
+        <button class="btn-amber" id="btnUploadPyq" onclick="openUpload('pyq')">＋ Upload a PYQ</button>
+      </div>
+      <div class="doc-grid" id="pyqGrid"></div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="view" id="view-chat">
+      <div class="chat-wrap">
+        <div class="chat-main" style="flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; height:100%;">
+          <div class="chat-head">
+            <span id="chanTitle">ChatBot</span>
+            <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+              <select id="chatSubjectSelect" style="padding:6px 12px; border:1.5px solid var(--rule); border-radius:4px; font-size:13px; font-weight:600; font-family:inherit; color:var(--text); background:#fff; cursor:pointer; outline:none;">
+                <option value="DAA">DAA</option>
+                <option value="AI">AI</option>
+                <option value="AWS">AWS</option>
+                <option value="EPJ">EPJ</option>
+                <option value="TOC">TOC</option>
+                <option value="QR">QR</option>
+                <option value="General">General</option>
+              </select>
+              <button onclick="clearChatHistory()" title="Clear conversation history" class="toolbar-btn" style="color:var(--red); display:flex; align-items:center; gap:4px;">
+                <span>🗑️</span> Clear
+              </button>
+            </div>
+          </div>
+          <div class="chat-msgs" id="chatMsgs"></div>
+          <div class="chat-input">
+            <input id="chatInput" placeholder="Ask any concept, algorithm, or past exam question…" onkeydown="handleChatKeyDown(event)">
+            <button id="chatSendBtn" class="chat-send-btn" onclick="handleChatAction()" title="Send message (Enter)" aria-label="Send message">
+              <span class="btn-icon send-icon">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </span>
+              <span class="btn-icon stop-icon">
+                <svg class="stop-spin-svg" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2.5"></circle>
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="70" stroke-dashoffset="40" stroke-linecap="round"></circle>
+                </svg>
+                <span class="stop-square"></span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="view" id="view-profile">
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="avatar" id="profileAvatar">AR</div>
+          <div>
+            <div class="p-name" id="profileName">Parul Admin</div>
+            <div class="p-role" id="profileRole">B.Tech CSE · Semester 5 · Roll No. 2113101</div>
+          </div>
+        </div>
+        <div class="p-row"><span class="k">College email</span><span class="v" id="profileEmail">admin@paruluniversity.ac.in</span></div>
+        <div class="p-row"><span class="k">Branch</span><span class="v" id="profileBranch">Computer Science &amp; Engineering</span></div>
+        <div class="p-row" id="profileBatchRow"><span class="k">Batch</span><span class="v" id="profileBatch">—</span></div>
+        <div class="p-row"><span class="k">Items contributed</span><span class="v" id="profileContrib">0</span></div>
+        <div style="margin-top:18px;"><button class="btn-login" style="background:var(--red);" onclick="handleLogout()">Log out</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal-bg" id="uploadModal">
+  <div class="modal">
+    <h3 id="uploadTitle">Upload notes</h3>
+    <div class="field"><label>Title</label><input id="upTitle" placeholder="e.g. Unit 4 — Greedy Algorithms"></div>
+    <div class="field"><label>Subject</label>
+      <select id="upSubject">
+        <option>Design & Analysis of Algorithms</option>
+        <option>Artificial Intelligence</option>
+        <option>AWS Cloud Fundamentals</option>
+        <option>Enterprise Programming using Java</option>
+        <option>Theory of Computation</option>
+        <option>Quant & Reasoning</option>
+      </select>
+    </div>
+    <div class="field"><label>File (PDF)</label>
+      <div id="dropZone" class="drop-zone" onclick="document.getElementById('upFile').click()">
+        <span id="dropZoneText">📥 Drag &amp; drop a PDF here, or click to browse</span>
+        <input type="file" id="upFile" accept=".pdf,.doc,.docx" hidden>
+      </div>
+      <div id="uploadProgressWrap" style="display:none; margin-top:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-soft); margin-bottom:4px;"><span>Uploading…</span><span id="uploadPct">0%</span></div>
+        <div style="height:8px; background:var(--paper); border:1px solid var(--rule); border-radius:4px; overflow:hidden;">
+          <div id="uploadProgressBar" style="height:100%; width:0%; background:var(--amber); transition:width .2s;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeUpload()">Cancel</button>
+      <button class="btn-primary" onclick="submitUpload()">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF preview modal -->
+<div class="modal-bg" id="previewModal">
+  <div class="modal" style="max-width:880px; width:100%; height:88vh; display:flex; flex-direction:column; padding:0;">
+    <div style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-bottom:1px solid var(--rule); flex-shrink:0;">
+      <span id="previewTitle" style="flex:1; font-weight:700; color:var(--head); font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+      <a id="previewOpenTab" href="#" target="_blank" class="toolbar-btn" style="text-decoration:none; display:inline-flex; align-items:center;">↗ Open in new tab</a>
+      <button class="toolbar-btn" onclick="closePreview()">✕ Close</button>
+    </div>
+    <iframe id="previewFrame" src="about:blank" style="flex:1; width:100%; border:none; background:#fff;" title="PDF preview"></iframe>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+/* ---------------- CONFIG & AUTH ---------------- */
+const API_BASE = window.location.port === '5000' ? '' : 'http://localhost:5000';
+
+function safeGet(k) {
+  try { return localStorage.getItem(k) || ''; } catch (e) { return ''; }
+}
+function safeSet(k, v) {
+  try { localStorage.setItem(k, v); } catch (e) {}
+}
+
+let authToken = safeGet('noteversity_token');
+let currentUser = null;
+let socket = null;
+let socketConnected = false;
+
+async function ensureAuth() {
+  if (authToken && authToken !== 'undefined' && authToken !== 'null') {
+    return authToken;
+  }
+  const saved = safeGet('noteversity_token');
+  if (saved && saved !== 'undefined' && saved !== 'null') {
+    authToken = saved;
+    return authToken;
+  }
+  return '';
+}
+
+function getAuthHeaders(extra = {}) {
+  const h = Object.assign({}, extra);
+  if (authToken) {
+    h['Authorization'] = `Bearer ${authToken}`;
+  }
+  return h;
+}
+
+/* ---------------- DATA ---------------- */
+const subjects = [
+  {name:"Design & Analysis of Algorithms", code:"DAA", color:"#0A4D68"},
+  {name:"Artificial Intelligence", code:"AI", color:"#6A4E9C"},
+  {name:"AWS Cloud Fundamentals", code:"AWS", color:"#B45309"},
+  {name:"Enterprise Programming using Java", code:"EPJ", color:"#2E8B57"},
+  {name:"Theory of Computation", code:"TOC", color:"#C84B31"},
+  {name:"Quant & Reasoning", code:"QR", color:"#088395"},
+];
+
+let notes = [];
+let pyqs = [];
+
+let botChatData = [];
+
+/* ---------------- UTILS ---------------- */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+
+function subjColor(code){ const s = subjects.find(s=>s.code===code); return s ? s.color : '#1E3A5F'; }
+
+/* ---------------- NAV ---------------- */
+function toggleSidebar(){
+  document.body.classList.toggle('sidebar-open');
+}
+function switchView(name){
+  document.body.classList.remove('sidebar-open');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active', t.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const titles = {dashboard:"Dashboard", notes:"Notes Library", pyqs:"PYQ Bank", chat:"ChatBot", profile:"Profile"};
+  document.getElementById('topbarTitle').textContent = titles[name];
+  document.title = titles[name] + ' — Noteversity';
+  if(name === 'notes') fetchNotes();
+  if(name === 'pyqs') fetchPyqs();
+  if(name === 'dashboard') renderDashboard();
+  if(name === 'chat') loadChatHistory();
+}
+
+/* ---------------- DASHBOARD ---------------- */
+async function renderDashboard(){
+  if(!authToken) await ensureAuth();
+  try {
+    const res = await fetch(`${API_BASE}/api/dashboard`, {
+      headers: getAuthHeaders()
+    });
+    if(res.ok){
+      const data = await res.json();
+      
+      // Update stat cards
+      if(data.stats){
+        const notesDlEl = document.getElementById('statNotesDl');
+        if(notesDlEl) notesDlEl.textContent = data.stats.notesDownloaded || 0;
+        const pyqsDlEl = document.getElementById('statPyqsDl');
+        if(pyqsDlEl) pyqsDlEl.textContent = data.stats.pyqsDownloaded || 0;
+        const totalResEl = document.getElementById('statTotalRes');
+        if(totalResEl) totalResEl.textContent = notes.length + pyqs.length;
+      }
+
+      // Update profile info (merge so fields set at login — e.g. id — are preserved)
+      if(data.profile){
+        currentUser = Object.assign({}, currentUser || {}, data.profile);
+        const initials = (data.profile.name || 'User').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        const sideAv = document.getElementById('sidebarAvatar');
+        if(sideAv) sideAv.textContent = initials;
+        const sideNm = document.getElementById('sidebarName');
+        if(sideNm) sideNm.textContent = data.profile.name;
+        const profAv = document.getElementById('profileAvatar');
+        if(profAv) profAv.textContent = initials;
+        const profNm = document.getElementById('profileName');
+        if(profNm) profNm.textContent = data.profile.name;
+        const profEm = document.getElementById('profileEmail');
+        if(profEm) profEm.textContent = data.profile.email;
+        const profBr = document.getElementById('profileBranch');
+        if(profBr) profBr.textContent = data.profile.branch || 'Computer Science & Engineering';
+      }
+
+      const recentItems = [...(data.recentNotes || []), ...(data.recentPyqs || [])];
+      const recent = document.getElementById('recentList');
+      if(recentItems.length > 0){
+        recent.innerHTML = recentItems.slice(0,4).map(n=>`
+          <div class="list-row">
+            <div class="file-ic" style="background:${subjColor(n.subject)}22;color:${subjColor(n.subject)}">${n.subject}</div>
+            <div class="row-main"><div class="t">${escapeHtml(n.title)}</div><div class="s">${n.subject} · ${n.downloads || 0} downloads</div></div>
+            <a class="row-cta" href="#" onclick="downloadItem('${n._id}','${escapeHtml(n.title)}','${n.year ? 'pyq' : 'note'}');return false;">Open</a>
+          </div>`).join('');
+      } else {
+        recent.innerHTML = `<div style="padding:14px 16px;font-size:12px;color:var(--text-faint)">No recent downloads yet.</div>`;
+      }
+    }
+  } catch(err) {
+    console.warn('Dashboard fetch error:', err);
+  }
+
+  const ql = document.getElementById('quickLinks');
+  ql.innerHTML = subjects.map(s=>`
+    <div class="qlink" style="cursor:pointer;" onclick="filterNotes('${s.code}');switchView('notes');">
+      <span>${s.name}</span><span class="tag">${s.code}</span>
+    </div>`).join('');
+}
+
+function renderChips(containerId, dataKey, activeVal, onClick){
+  const el = document.getElementById(containerId);
+  const codes = ["All", ...subjects.map(s=>s.code)];
+  el.innerHTML = codes.map(c=>`<button class="chip ${c===activeVal?'active':''}" onclick="${onClick}('${c}')">${c}</button>`).join('');
+}
+
+/* ---------------- NOTES ---------------- */
+let notesFilter = "All", notesSearch = "";
+function filterNotes(c){ notesFilter = c; fetchNotes(); }
+
+function renderSkeleton(gridId, count = 8){
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = Array.from({ length: count }, () => `
+    <div class="doc-card skel-card">
+      <div class="skel-line" style="width:42%;"></div>
+      <div class="skel-line" style="width:88%; height:13px;"></div>
+      <div class="skel-line" style="width:58%;"></div>
+      <div class="skel-line" style="width:34%; margin-bottom:0;"></div>
+    </div>`).join('');
+}
+
+async function fetchNotes(){
+  if(!authToken) await ensureAuth();
+  renderSkeleton('notesGrid');
+  try {
+    let url = `${API_BASE}/api/notes?`;
+    if(notesFilter !== "All") url += `subject=${encodeURIComponent(notesFilter)}&`;
+    if(notesSearch) url += `search=${encodeURIComponent(notesSearch)}&`;
+    
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if(res.ok){
+      notes = await res.json();
+      renderNotes();
+      updateContribStat();
+      updateTotalResStat();
+    }
+  } catch(err){
+    console.error('Fetch notes error:', err);
+  }
+}
+
+function renderNotes(){
+  renderChips('notesChips', 'subject', notesFilter, 'filterNotes');
+  document.getElementById('notesCount').textContent = notes.length;
+  const admin = isAdmin();
+  document.getElementById('notesGrid').innerHTML = notes.map(n=>`
+    <div class="doc-card">
+      <div class="doc-spine" style="background:${subjColor(n.subject)}"></div>
+      <div class="doc-top"><span class="doc-subject">${n.subject} · Sem ${n.semester || 5}</span></div>
+      <div class="doc-title">${escapeHtml(n.title)}</div>
+      <div class="doc-meta">By ${escapeHtml(n.uploadedBy?.name || 'Faculty Notes')} · ${n.fileType?.includes('pdf') ? 'PDF' : 'Doc'}</div>
+      <div class="doc-foot">
+        <span class="doc-dl">⬇ ${n.downloads || 0}</span>
+        <div style="display:flex;gap:6px;">
+          <button class="doc-btn" style="background:var(--amber-dark);" title="Preview" onclick="openPreview('${n.fileUrl}', '${escapeHtml(n.title)}')">👁</button>
+          <button class="doc-btn" onclick="downloadItem('${n._id}', '${escapeHtml(n.title)}', 'note')">Download</button>
+          ${admin ? `<button class="doc-btn" style="background:var(--red);" title="Delete file" onclick="deleteItem('${n._id}', '${escapeHtml(n.title)}', 'note')">🗑️</button>` : ''}
+        </div>
+      </div>
+    </div>`).join('') || `<div class="empty"><div class="ic">📭</div>No notes found for this filter yet.</div>`;
+}
+
+/* ---------------- PYQS ---------------- */
+let pyqFilter = "All", pyqSearch = "";
+function filterPyqs(c){ pyqFilter = c; fetchPyqs(); }
+
+async function fetchPyqs(){
+  if(!authToken) await ensureAuth();
+  renderSkeleton('pyqGrid');
+  try {
+    let url = `${API_BASE}/api/pyqs?`;
+    if(pyqFilter !== "All") url += `subject=${encodeURIComponent(pyqFilter)}&`;
+    if(pyqSearch) url += `search=${encodeURIComponent(pyqSearch)}&`;
+
+    const res = await fetch(url, { headers: getAuthHeaders() });
+    if(res.ok){
+      pyqs = await res.json();
+      renderPyqs();
+      updateContribStat();
+      updateTotalResStat();
+    }
+  } catch(err){
+    console.error('Fetch PYQs error:', err);
+  }
+}
+
+function renderPyqs(){
+  renderChips('pyqChips', 'subject', pyqFilter, 'filterPyqs');
+  document.getElementById('pyqCount').textContent = pyqs.length;
+  const admin = isAdmin();
+  document.getElementById('pyqGrid').innerHTML = pyqs.map(n=>`
+    <div class="doc-card">
+      <div class="doc-spine" style="background:${subjColor(n.subject)}"></div>
+      <div class="doc-top"><span class="doc-subject">${n.subject} · ${n.year || 2024}</span></div>
+      <div class="doc-title">${escapeHtml(n.title)}</div>
+      <div class="doc-meta">${n.isSolved ? 'Solved' : 'Unsolved'} · Sem ${n.semester || 5}</div>
+      <div class="doc-foot">
+        <span class="doc-dl">⬇ ${n.downloads || 0}</span>
+        <div style="display:flex;gap:6px;">
+          <button class="doc-btn" style="background:var(--amber-dark);" title="Preview" onclick="openPreview('${n.fileUrl}', '${escapeHtml(n.title)}')">👁</button>
+          <button class="doc-btn" onclick="downloadItem('${n._id}', '${escapeHtml(n.title)}', 'pyq')">Download</button>
+          ${admin ? `<button class="doc-btn" style="background:var(--red);" title="Delete file" onclick="deleteItem('${n._id}', '${escapeHtml(n.title)}', 'pyq')">🗑️</button>` : ''}
+        </div>
+      </div>
+    </div>`).join('') || `<div class="empty"><div class="ic">📭</div>No PYQs found for this filter yet.</div>`;
+}
+
+/* ---------------- DOWNLOAD ---------------- */
+async function downloadItem(id, title, type = 'note'){
+  if(!authToken) await ensureAuth();
+  try {
+    const endpoint = type === 'pyq' ? `/api/pyqs/${id}/download` : `/api/notes/${id}/download`;
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if(res.ok){
+      const data = await res.json();
+      showToast("Downloaded: " + title);
+      if(data.fileUrl){
+        const link = document.createElement('a');
+        link.href = `${API_BASE}${data.fileUrl}`;
+        link.download = (title || 'document').replace(/[^a-zA-Z0-9_-]/g, '_') + '.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      if(type === 'pyq') fetchPyqs(); else fetchNotes();
+      renderDashboard();
+    } else {
+      showToast("Download request failed");
+    }
+  } catch(err){
+    console.error('Download error:', err);
+    showToast("Downloaded: " + title);
+  }
+}
+
+/* ---------------- DELETE (ADMIN ONLY) ---------------- */
+async function deleteItem(id, title, type = 'note'){
+  if(!isAdmin()){
+    showToast("Access Denied: Only Admin (Parul Admin) can delete files");
+    return;
+  }
+  if(!confirm(`Are you sure you want to permanently delete "${title}"?`)) return;
+
+  try {
+    const endpoint = type === 'pyq' ? `/api/pyqs/${id}` : `/api/notes/${id}`;
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    if(res.ok){
+      showToast("Deleted: " + title);
+      if(type === 'pyq') fetchPyqs(); else fetchNotes();
+      renderDashboard();
+    } else {
+      const data = await res.json();
+      showToast(data.message || "Failed to delete file");
+    }
+  } catch(err){
+    console.error('Delete error:', err);
+    showToast("Network error while deleting");
+  }
+}
+
+/* ---------------- CHAT & SOCKET.IO ---------------- */
+function initSocket() { /* Real-time AI chat runs over REST */ }
+
+let isChatBotTyping = false;
+
+function formatMarkdown(text) {
+  if (!text) return '';
+
+  // 1. Clean up LaTeX cases into clean readable monospace blocks
+  text = text.replace(/\\begin\{cases\}([\s\S]*?)\\end\{cases\}/gi, function(m, body) {
+    var clean = body
+      .replace(/\\text\{([^}]+)\}/g, '$1')
+      .replace(/\\\\/g, '\n')
+      .replace(/&/g, '  →  ')
+      .replace(/\\le\b/g, '≤')
+      .replace(/\\ge\b/g, '≥')
+      .replace(/\\times\b/g, '×')
+      .replace(/\\max\b/g, 'max')
+      .replace(/\\min\b/g, 'min');
+    return '```\n' + clean.trim() + '\n```';
+  });
+
+  text = text.replace(/\\text\{([^}]+)\}/g, '$1')
+             .replace(/\\le\b/g, '≤')
+             .replace(/\\ge\b/g, '≥')
+             .replace(/\\ne\b/g, '≠')
+             .replace(/\\times\b/g, '×');
+
+  var html = escapeHtml(text);
+
+  // Code blocks: ```language ... ```
+  html = html.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/gi, function(m, lang, code) {
+    return '<pre style="background:#052F40; color:#EDE7D9; padding:10px 14px; border-radius:4px; overflow-x:auto; font-family:\'IBM Plex Mono\',monospace; font-size:12px; margin:10px 0; line-height:1.5;"><code>' + code + '</code></pre>';
+  });
+
+  // Inline code: `code`
+  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(10,77,104,0.08); color:var(--head); padding:2px 5px; border-radius:3px; font-family:monospace; font-size:12px;">$1</code>');
+  // Bold: **text**
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h4 style="margin:12px 0 4px; color:var(--head); font-size:13.5px;">$1</h4>');
+  html = html.replace(/^## (.*$)/gim, '<h3 style="margin:14px 0 6px; color:var(--head); font-size:14.5px;">$1</h3>');
+  html = html.replace(/^# (.*$)/gim, '<h2 style="margin:16px 0 8px; color:var(--head); font-size:15.5px;">$1</h2>');
+  // Markdown tables (header row + |---| separator + body rows) → styled HTML tables
+  html = html.replace(/((?:^[ \t]*\|[^\n]*\|[ \t]*\n)(?:^[ \t]*\|[ :\-\|]+\|[ \t]*\n)(?:^[ \t]*\|[^\n]*\|[ \t]*\n?)*)/gm, function (m, tbl) {
+    var rows = tbl.trim().split(/\n/).map(function (r) {
+      return r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (c) { return c.trim(); });
+    });
+    if (rows.length < 2) return m;
+    var ths = rows[0].map(function (c) {
+      return '<th style="border:1px solid var(--rule); background:#EEF7F8; padding:6px 9px; font-size:12px; color:var(--head); text-align:left; white-space:nowrap;">' + c + '</th>';
+    }).join('');
+    var body = rows.slice(2).map(function (r) {
+      return '<tr>' + r.map(function (c) {
+        return '<td style="border:1px solid var(--rule); padding:5px 9px; font-size:12px; color:var(--text);">' + c + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    return '<div style="overflow-x:auto; margin:10px 0;"><table style="border-collapse:collapse; min-width:55%;">' +
+      '<thead><tr>' + ths + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+  });
+  // Bullet lists
+  html = html.replace(/^\s*[\*\-]\s+(.*)$/gim, '<li style="margin-left:14px; margin-bottom:4px;">$1</li>');
+  html = html.replace(/(<li.*<\/li>)/gs, '<ul style="padding-left:10px; margin:8px 0;">$1</ul>');
+  // Paragraphs and breaks
+  html = html.replace(/\n\n/g, '<div style="margin-bottom:8px;"></div>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+function askStarter(question, subj) {
+  var sel = document.getElementById('chatSubjectSelect');
+  if (sel && subj) sel.value = subj;
+  var input = document.getElementById('chatInput');
+  if (input) {
+    input.value = question;
+    sendMsg();
+  }
+}
+
+async function loadChatHistory() {
+  if (!authToken) return;
+  try {
+    var res = await fetch(API_BASE + '/api/chat/history', {
+      headers: getAuthHeaders()
+    });
+    if (res.ok) {
+      var msgs = await res.json();
+      if (Array.isArray(msgs)) {
+        botChatData = msgs;
+        renderMsgs();
+        updateChatStat();
+      }
+    }
+  } catch (err) {
+    console.warn('Chat history error:', err);
+  }
+}
+
+async function clearChatHistory() {
+  if (botChatData.length === 0) return;
+  if (!confirm('Clear your ChatBot conversation history?')) return;
+  botChatData = [];
+  renderMsgs();
+  updateChatStat();
+  try {
+    await fetch(API_BASE + '/api/chat/history', {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    showToast('Conversation cleared');
+  } catch (e) {}
+}
+
+function renderMsgs(){
+  var wrap = document.getElementById('chatMsgs');
+  if (!wrap) return;
+
+  if (botChatData.length === 0 && !isChatBotTyping) {
+    wrap.innerHTML = '<div class="starter-wrap">' +
+      '<div class="starter-title">🤖 Noteversity Academic Assistant</div>' +
+      '<div class="starter-desc">I read your subject handwritten notes and past exam papers (PYQs) directly from the repository to answer your exam questions and doubt clarifications.</div>' +
+      '<div style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-faint); margin-bottom:8px;">Try asking:</div>' +
+      '<div class="starter-prompts">' +
+        '<div class="starter-btn" onclick="askStarter(\'Explain the 0/1 Knapsack recurrence and give the DP state table.\', \'DAA\')">' +
+          '<span>DAA: 0/1 Knapsack DP derivation & recurrence</span><span>→</span>' +
+        '</div>' +
+        '<div class="starter-btn" onclick="askStarter(\'Explain the difference between DFA and NFA with a suitable example.\', \'TOC\')">' +
+          '<span>TOC: DFA vs NFA comparison with example</span><span>→</span>' +
+        '</div>' +
+        '<div class="starter-btn" onclick="askStarter(\'Explain the Servlet life cycle and how JSP differs from Servlets.\', \'EPJ\')">' +
+          '<span>EPJ: Servlet life cycle & JSP vs Servlets</span><span>→</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+    return;
+  }
+
+  var html = botChatData.map(function(m) {
+    var isMe = m.me;
+    var bodyContent = isMe ? escapeHtml(m.text) : formatMarkdown(m.text);
+    var sourcesHtml = (m.sources && m.sources.length) ? (
+      '<div class="msg-sources">' +
+        '<span style="font-size:10.5px; font-weight:700; color:var(--text-faint); margin-right:4px;">📄 Studied:</span>' +
+        m.sources.map(function(s) {
+          return '<a class="source-pill" href="' + API_BASE + s.fileUrl + '" target="_blank" title="View ' + escapeHtml(s.title) + '">' +
+            '<span>' + (s.type === 'PYQ' ? '🗂' : '📘') + '</span>' +
+            '<span>' + escapeHtml(s.title.length > 30 ? s.title.slice(0, 30) + '…' : s.title) + '</span>' +
+          '</a>';
+        }).join('') +
+      '</div>'
+    ) : '';
+
+    return '<div class="msg ' + (isMe ? 'me' : '') + '">' +
+      '<div class="avatar" style="' + (isMe ? '' : 'background:var(--amber); color:#fff; font-weight:700;') + '">' +
+        (isMe ? 'You' : 'AI') +
+      '</div>' +
+      '<div style="flex:1; min-width:0;">' +
+        '<div class="who">' + (isMe ? 'You' : (m.who || 'Noteversity AI')) + '</div>' +
+        '<div class="bubble" style="' + (isMe ? '' : 'color:var(--text); border:1px solid var(--rule);') + '">' +
+          bodyContent +
+          sourcesHtml +
+        '</div>' +
+        '<div class="time">' + (m.time || '') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  if (isChatBotTyping) {
+    html += '<div class="msg">' +
+      '<div class="avatar" style="background:var(--amber); color:#fff; font-weight:700;">AI</div>' +
+      '<div>' +
+        '<div class="who">Noteversity AI</div>' +
+        '<div class="chat-typing">' +
+          '<span class="typing-dot"></span>' +
+          '<span class="typing-dot"></span>' +
+          '<span class="typing-dot"></span>' +
+          '<span>Analyzing subject notes & drafting answer…</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  wrap.innerHTML = html;
+  wrap.scrollTop = wrap.scrollHeight;
+
+  // Render KaTeX equations if available
+  if (typeof renderMathInElement === 'function') {
+    try {
+      renderMathInElement(wrap, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false }
+        ],
+        throwOnError: false
+      });
+    } catch (e) {
+      console.warn('KaTeX render error:', e);
+    }
+  }
+}
+
+
+
+let currentChatAbortController = null;
+let chatAbortedByUser = false;
+
+function setGeneratingState(generating) {
+  isChatBotTyping = generating;
+  const sendBtn = document.getElementById('chatSendBtn');
+  if (sendBtn) {
+    if (generating) {
+      sendBtn.classList.add('is-generating');
+      sendBtn.title = "Stop generating (Esc or click)";
+      sendBtn.setAttribute('aria-label', "Stop generating");
+    } else {
+      sendBtn.classList.remove('is-generating');
+      sendBtn.title = "Send message (Enter)";
+      sendBtn.setAttribute('aria-label', "Send message");
+    }
+  }
+  renderMsgs();
+}
+
+function stopMsg() {
+  if (isChatBotTyping) {
+    chatAbortedByUser = true;
+    if (currentChatAbortController) {
+      try {
+        currentChatAbortController.abort();
+      } catch (e) {}
+      currentChatAbortController = null;
+    }
+    botChatData.push({
+      who: "Noteversity AI",
+      text: "⏹️ *Response stopped by user.*",
+      me: false,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    setGeneratingState(false);
+    const input = document.getElementById('chatInput');
+    if (input) input.focus();
+  }
+}
+
+function handleChatAction() {
+  if (isChatBotTyping) {
+    stopMsg();
+  } else {
+    sendMsg();
+  }
+}
+
+function handleChatKeyDown(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    if (!isChatBotTyping) {
+      sendMsg();
+    }
+  } else if (event.key === 'Escape') {
+    if (isChatBotTyping) {
+      event.preventDefault();
+      stopMsg();
+    }
+  }
+}
+
+window.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape' && isChatBotTyping) {
+    stopMsg();
+  }
+});
+
+async function sendMsg() {
+  const input = document.getElementById('chatInput');
+  const val = input ? input.value.trim() : '';
+  if (!val || isChatBotTyping) return;
+
+  const subj = document.getElementById('chatSubjectSelect')?.value || 'All';
+  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // 1. Add user message
+  botChatData.push({ who: "You", text: val, me: true, time: now });
+  if (input) input.value = '';
+
+  // Initialize abort controller & state
+  chatAbortedByUser = false;
+  currentChatAbortController = new AbortController();
+  setGeneratingState(true);
+
+  // 2. Send to backend AI endpoint
+  try {
+    if (!authToken) await ensureAuth();
+    const res = await fetch(`${API_BASE}/api/chat/ask`, {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ message: val, subject: subj }),
+      signal: currentChatAbortController.signal
+    });
+
+    const data = await res.json();
+    if (chatAbortedByUser) return;
+
+    if (res.ok && data.reply) {
+      botChatData.push({
+        who: "Noteversity AI",
+        text: data.reply,
+        sources: data.sources || [],
+        me: false,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    } else {
+      botChatData.push({
+        who: "Noteversity AI",
+        text: data.message || "I encountered an error trying to process your question. Please ensure the backend server has a valid AI API key configured.",
+        me: false,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+  } catch (err) {
+    if (err.name === 'AbortError' || chatAbortedByUser) {
+      console.log('[Chat] Generation aborted by user.');
+      return;
+    }
+    console.error('Chat error:', err);
+    botChatData.push({
+      who: "Noteversity AI",
+      text: "Connection failed. Please check if the backend server is running on port 5000.",
+      me: false,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+  } finally {
+    currentChatAbortController = null;
+    chatAbortedByUser = false;
+    setGeneratingState(false);
+    updateChatStat();
+    if (input) input.focus();
+  }
+}
+
+/* ---------------- UPLOAD MODAL ---------------- */
+let uploadKind = 'note';
+function openPreview(fileUrl, title){
+  document.getElementById('previewTitle').textContent = title || 'Preview';
+  document.getElementById('previewFrame').src = API_BASE + fileUrl;
+  document.getElementById('previewOpenTab').href = API_BASE + fileUrl;
+  document.getElementById('previewModal').classList.add('show');
+}
+function closePreview(){
+  document.getElementById('previewFrame').src = 'about:blank';
+  document.getElementById('previewModal').classList.remove('show');
+}
+
+function openUpload(kind){
+  if(!isAdmin()){
+    showToast("Access Denied: Only Admin (Parul Admin) can upload files");
+    return;
+  }
+  uploadKind = kind;
+  document.getElementById('uploadTitle').textContent = kind==='note' ? 'Upload notes' : 'Upload a PYQ';
+  document.getElementById('uploadModal').classList.add('show');
+}
+function closeUpload(){
+  document.getElementById('uploadModal').classList.remove('show');
+  resetUploadUi();
+}
+
+function resetUploadUi(){
+  const wrap = document.getElementById('uploadProgressWrap');
+  const bar = document.getElementById('uploadProgressBar');
+  const pct = document.getElementById('uploadPct');
+  if (wrap) wrap.style.display = 'none';
+  if (bar) bar.style.width = '0%';
+  if (pct) pct.textContent = '0%';
+  const btn = document.querySelector('#uploadModal .btn-primary');
+  if (btn) btn.disabled = false;
+  updateDropZoneText();
+}
+
+function updateDropZoneText(){
+  const input = document.getElementById('upFile');
+  const label = document.getElementById('dropZoneText');
+  if (!input || !label) return;
+  const f = input.files && input.files[0];
+  label.textContent = f ? `📄 ${f.name}` : '📥 Drag & drop a PDF here, or click to browse';
+}
+
+// Wire the drop zone (drag & drop + click-to-browse)
+(function wireDropZone(){
+  const zone = document.getElementById('dropZone');
+  const input = document.getElementById('upFile');
+  if (!zone || !input) return;
+  ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(ev => zone.addEventListener(ev, (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+  }));
+  zone.addEventListener('drop', (e) => {
+    if (e.dataTransfer && e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      updateDropZoneText();
+    }
+  });
+  input.addEventListener('change', updateDropZoneText);
+})();
+
+function uploadWithProgress(formData, endpoint){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', API_BASE + endpoint);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + authToken);
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        const bar = document.getElementById('uploadProgressBar');
+        const pctEl = document.getElementById('uploadPct');
+        if (bar) bar.style.width = pct + '%';
+        if (pctEl) pctEl.textContent = pct + '%';
+      }
+    });
+    xhr.onload = () => {
+      let data = {};
+      try { data = JSON.parse(xhr.responseText); } catch (e) {}
+      resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data });
+    };
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.send(formData);
+  });
+}
+
+async function submitUpload(){
+  if(!isAdmin()){
+    showToast("Access Denied: Only Admin (Parul Admin) can upload files");
+    return;
+  }
+  if(!authToken) await ensureAuth();
+  const title = document.getElementById('upTitle').value.trim() || 'Untitled upload';
+  const subjName = document.getElementById('upSubject').value;
+  const code = subjects.find(s=>s.name===subjName)?.code || 'DAA';
+  const fileInput = document.getElementById('upFile');
+
+  if(!fileInput.files || fileInput.files.length === 0){
+    showToast("Please choose a file to upload");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  formData.append('title', title);
+  formData.append('subject', code);
+  formData.append('branch', 'CSE');
+  formData.append('semester', '5');
+
+  const btn = document.querySelector('#uploadModal .btn-primary');
+  if (btn) btn.disabled = true;
+  document.getElementById('uploadProgressWrap').style.display = 'block';
+
+  try {
+    let res;
+    if(uploadKind === 'note'){
+      res = await uploadWithProgress(formData, '/api/notes');
+    } else {
+      formData.append('year', new Date().getFullYear().toString());
+      formData.append('examType', 'EndSem');
+      formData.append('isSolved', 'false');
+      res = await uploadWithProgress(formData, '/api/pyqs');
+    }
+
+    if(res.ok){
+      closeUpload();
+      document.getElementById('upTitle').value = '';
+      fileInput.value = '';
+      showToast("Uploaded successfully — visible to your batch now");
+      if(uploadKind === 'note'){
+        fetchNotes();
+        renderDashboard();
+      } else {
+        fetchPyqs();
+      }
+    } else {
+      showToast(res.data.message || "Upload failed");
+      resetUploadUi();
+    }
+  } catch(err){
+    console.error('Upload error:', err);
+    showToast("Network error uploading file");
+    resetUploadUi();
+  }
+}
+
+/* ---------------- SEARCH ---------------- */
+const searchInput = document.getElementById('globalSearch');
+let searchDebounceTimer;
+if(searchInput){
+  searchInput.addEventListener('input', (e) => {
+    const term = e.target.value.trim();
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      notesSearch = term;
+      pyqSearch = term;
+      fetchNotes();
+      fetchPyqs();
+    }, 300);
+  });
+}
+
+/* ---------------- TOAST ---------------- */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.innerHTML = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ---------------- AUTH UI LOGIC ---------------- */
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  if (tab === 'signup') {
+    document.querySelectorAll('.auth-tab')[1].classList.add('active');
+    document.getElementById('form-signup').classList.add('active');
+  } else {
+    document.querySelectorAll('.auth-tab')[0].classList.add('active');
+    document.getElementById('form-signin').classList.add('active');
+  }
+  hideLoginAlert();
+}
+
+function showLoginAlert(msg) {
+  const el = document.getElementById('loginAlert');
+  el.textContent = msg;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function hideLoginAlert() {
+  document.getElementById('loginAlert').classList.remove('show');
+}
+
+function enterApp(data) {
+  authToken = data.token;
+  currentUser = data.user;
+  safeSet('noteversity_token', authToken);
+  safeSet('noteversity_user', JSON.stringify(currentUser));
+
+  // Trigger smooth exit transition on login card and screen
+  const card = document.querySelector('.login-card');
+  const screen = document.getElementById('login-screen');
+  if (card) card.classList.add('card-exit');
+  if (screen) screen.classList.add('screen-exit');
+
+  setTimeout(() => {
+    if (screen) {
+      screen.classList.add('hidden');
+      screen.classList.remove('screen-exit');
+    }
+    if (card) card.classList.remove('card-exit');
+
+    const shell = document.getElementById('app-shell');
+    shell.style.display = 'flex';
+    shell.classList.remove('app-enter-anim');
+    void shell.offsetWidth; // force browser repaint for animation
+    shell.classList.add('app-enter-anim');
+
+    populateUserUI();
+    initSocket();
+    renderDashboard();
+    fetchNotes();
+    fetchPyqs();
+    loadChatHistory();
+    renderMsgs();
+
+    const firstName = (currentUser.name || 'Student').split(' ')[0];
+    showToast(`Welcome, ${escapeHtml(firstName)}!`);
+  }, 350);
+}
+
+function isAdmin() {
+  return !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@paruluniversity.ac.in');
+}
+
+/* Real stat helpers: items the user uploaded + questions asked to the AI */
+function updateContribStat() {
+  const el = document.getElementById('profileContrib');
+  if (!el || !currentUser) return;
+  const myId = String(currentUser.id || currentUser._id || '');
+  if (!myId) { el.textContent = '0'; return; }
+  const count = notes.concat(pyqs).filter(n => String(n.uploadedBy?._id || n.uploadedBy || '') === myId).length;
+  el.textContent = count;
+}
+
+function updateChatStat() {
+  const el = document.getElementById('statChat');
+  if (el) el.textContent = botChatData.filter(m => m.me).length;
+}
+
+function updateTotalResStat() {
+  const el = document.getElementById('statTotalRes');
+  if (el) el.textContent = notes.length + pyqs.length;
+}
+
+function populateUserUI() {
+  if (!currentUser) return;
+  const admin = isAdmin();
+  const initials = (currentUser.name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'U';
+  const branchShort = (currentUser.branch || 'CSE').replace(/Computer Science.*/, 'CSE').replace(/Information Technology/, 'IT').replace(/Electronics.*/, 'ECE').replace(/Electrical.*/, 'EE').replace(/Mechanical.*/, 'ME').replace(/Civil.*/, 'CE');
+  const sem = currentUser.semester || 5;
+
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent = currentUser.name || 'Student';
+  document.getElementById('sidebarSub').innerHTML = `${branchShort} · Sem ${sem} · <span style="color:${admin ? 'var(--amber)' : '#A9A290'};font-weight:700;">${admin ? 'Admin' : 'Student'}</span>`;
+  document.getElementById('profileAvatar').textContent = initials;
+  document.getElementById('profileName').textContent = currentUser.name || 'Student';
+  document.getElementById('profileRole').textContent = (admin ? '⭐ Lead Contributor & Admin · ' : '') + `B.Tech ${branchShort} · Semester ${sem}` + (currentUser.rollNumber ? ` · Roll No. ${currentUser.rollNumber}` : '');
+  document.getElementById('profileEmail').textContent = currentUser.email || '';
+  document.getElementById('profileBranch').textContent = currentUser.branch || 'CSE';
+
+  // Batch derived from admission year encoded in the roll number (e.g. 2113101 → 2021–2025)
+  const batchRow = document.getElementById('profileBatchRow');
+  const rollYear = (currentUser.rollNumber || '').match(/^(\d{2})/);
+  const startYear = rollYear ? 2000 + Number(rollYear[1]) : null;
+  if (startYear && startYear >= 2000 && startYear <= new Date().getFullYear()) {
+    document.getElementById('profileBatch').textContent = `${startYear}–${startYear + 4}`;
+    if (batchRow) batchRow.style.display = 'flex';
+  } else {
+    if (batchRow) batchRow.style.display = 'none';
+  }
+
+  updateContribStat();
+  updateChatStat();
+
+  // Role-based UI visibility for upload buttons
+  const upNotesBtn = document.getElementById('btnUploadNotes');
+  const upPyqBtn = document.getElementById('btnUploadPyq');
+  if (upNotesBtn) upNotesBtn.style.display = admin ? 'flex' : 'none';
+  if (upPyqBtn) upPyqBtn.style.display = admin ? 'flex' : 'none';
+}
+
+function fillAdminCredentials() {
+  const emailInput = document.getElementById('loginEmail');
+  const passInput = document.getElementById('loginPassword');
+  if (emailInput) emailInput.value = 'admin@paruluniversity.ac.in';
+  if (passInput) passInput.value = 'admin123';
+  hideLoginAlert();
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+  btn.title = show ? 'Hide password' : 'Show password';
+}
+
+async function handleSignIn() {
+  hideLoginAlert();
+  const email = (document.getElementById('loginEmail').value || '').trim().toLowerCase();
+  const password = (document.getElementById('loginPassword').value || '');
+
+  if (!email) { showLoginAlert('Please enter your college email.'); return; }
+  if (!email.endsWith('@paruluniversity.ac.in')) { showLoginAlert('Only @paruluniversity.ac.in emails are allowed.'); return; }
+  if (!password) { showLoginAlert('Please enter your password.'); return; }
+
+  const btn = document.getElementById('btnSignIn');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showLoginAlert(data.message || 'Login failed');
+      btn.disabled = false; btn.textContent = 'Sign In →';
+      return;
+    }
+    enterApp(data);
+  } catch (err) {
+    showLoginAlert('Cannot connect to server. Is the backend running?');
+    btn.disabled = false; btn.textContent = 'Sign In →';
+  }
+}
+
+async function handleSignUp() {
+  hideLoginAlert();
+  const name = (document.getElementById('signupName').value || '').trim();
+  const email = (document.getElementById('signupEmail').value || '').trim().toLowerCase();
+  const password = (document.getElementById('signupPassword').value || '');
+  const confirmPassword = (document.getElementById('signupConfirmPassword').value || '');
+  const rollNumber = (document.getElementById('signupRoll').value || '').trim();
+  const branch = document.getElementById('signupBranch').value;
+  const semester = document.getElementById('signupSemester').value;
+
+  if (!name) { showLoginAlert('Please enter your full name.'); return; }
+  if (!email) { showLoginAlert('Please enter your college email.'); return; }
+  if (!email.endsWith('@paruluniversity.ac.in')) { showLoginAlert('Only @paruluniversity.ac.in emails are allowed.'); return; }
+  if (!password || password.length < 6) { showLoginAlert('Password must be at least 6 characters long.'); return; }
+  if (password !== confirmPassword) { showLoginAlert('Passwords do not match. Please check again.'); return; }
+
+  const btn = document.getElementById('btnSignUp');
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, rollNumber, branch, semester })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showLoginAlert(data.message || 'Signup failed');
+      btn.disabled = false; btn.textContent = 'Create Account & Enter Portal →';
+      return;
+    }
+    enterApp(data);
+  } catch (err) {
+    showLoginAlert('Cannot connect to server. Is the backend running?');
+    btn.disabled = false; btn.textContent = 'Create Account & Enter Portal →';
+  }
+}
+
+function handleLogout() {
+  authToken = '';
+  currentUser = null;
+  botChatData = [];
+  document.body.classList.remove('sidebar-open');
+  try { localStorage.removeItem('noteversity_token'); } catch(e){}
+  try { localStorage.removeItem('noteversity_user'); } catch(e){}
+  if (socket) { socket.disconnect(); socket = null; socketConnected = false; }
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('app-shell').classList.remove('app-enter-anim');
+  document.getElementById('login-screen').classList.remove('hidden');
+
+  // Reset form states
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('signupName').value = '';
+  document.getElementById('signupEmail').value = '';
+  document.getElementById('signupPassword').value = '';
+  document.getElementById('signupConfirmPassword').value = '';
+  document.getElementById('signupRoll').value = '';
+  hideLoginAlert();
+  switchAuthTab('signin');
+}
+
+/* ---------------- THEME (DARK MODE) ---------------- */
+function applyTheme(theme){
+  document.body.classList.toggle('dark', theme === 'dark');
+  const t = document.getElementById('themeToggle');
+  if (t) t.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+  safeSet('noteversity_theme', next);
+  applyTheme(next);
+}
+
+/* ---------------- INIT ---------------- */
+function resumeSavedSession() {
+  const savedToken = safeGet('noteversity_token');
+  const savedUser = safeGet('noteversity_user');
+  if (!savedToken || savedToken === 'undefined' || savedToken === 'null' || !savedUser) return;
+
+  let user = null;
+  try { user = JSON.parse(savedUser); } catch (e) { user = null; }
+  if (!user) { clearSavedSession(); return; }
+
+  const btn = document.getElementById('btnResumeSession');
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking session…'; }
+
+  // Validate the stored token before entering — expired sessions get a clear
+  // message instead of an app full of silent 401s.
+  fetch(`${API_BASE}/api/dashboard`, { headers: { 'Authorization': `Bearer ${savedToken}` } })
+    .then((res) => {
+      if (!res.ok) {
+        clearSavedSession();
+        showLoginAlert('Your previous session expired. Please sign in again.');
+        return;
+      }
+      authToken = savedToken;
+      enterApp({ token: savedToken, user });
+    })
+    .catch(() => {
+      // Server unreachable — keep the session so the user can retry later.
+      showLoginAlert('Cannot reach the server right now. Your session is saved — please try again.');
+    })
+    .finally(() => {
+      if (btn) { btn.disabled = false; btn.textContent = 'Enter Portal →'; }
+    });
+}
+
+function clearSavedSession() {
+  try { localStorage.removeItem('noteversity_token'); } catch(e){}
+  try { localStorage.removeItem('noteversity_user'); } catch(e){}
+  const box = document.getElementById('savedSessionNotice');
+  if (box) box.style.display = 'none';
+}
+
+async function initApp(){
+  if (window.location.protocol === 'file:') {
+    const w = document.getElementById('fileProtocolWarning');
+    if (w) w.style.display = 'block';
+  }
+  applyTheme(safeGet('noteversity_theme') || 'light');
+  // Offer one-tap resume when a previous session exists
+  const savedToken = safeGet('noteversity_token');
+  const savedUser = safeGet('noteversity_user');
+  if (savedToken && savedToken !== 'undefined' && savedToken !== 'null' && savedUser) {
+    try {
+      const u = JSON.parse(savedUser);
+      const notice = document.getElementById('savedSessionNotice');
+      const nameEl = document.getElementById('savedSessionName');
+      const emailEl = document.getElementById('savedSessionEmail');
+      if (notice && nameEl && u) {
+        nameEl.textContent = u.name || 'Student';
+        if (emailEl) emailEl.textContent = (u.email || '') + (u.email === 'admin@paruluniversity.ac.in' ? ' (Admin)' : ' (Student)');
+        notice.style.display = 'block';
+      }
+    } catch(e) {}
+  }
+}
+
+initApp();
+</script>
+</body>
+</html>
