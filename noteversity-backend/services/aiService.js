@@ -108,7 +108,8 @@ function extractKeywords(question) {
   const tokens = question.toLowerCase().replace(/[^a-z0-9+#]+/g, ' ').split(' ').filter(Boolean);
   const kws = new Set();
   for (const t of tokens) {
-    if (t.length < 2 || STOPWORDS.has(t) || /^\d+$/.test(t)) continue;
+    // digits are kept: "topics in unit 8" should match docs titled/texted "Unit 8"
+    if (t.length < 1 || STOPWORDS.has(t)) continue;
     kws.add(t);
     // crude singular/plural handling so "knapsacks" matches "knapsack" and vice versa
     if (t.length > 3 && t.endsWith('s')) kws.add(t.slice(0, -1));
@@ -195,9 +196,6 @@ async function generateWithFallback(apiKey, prompt) {
     process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
     'gemini-flash-latest',
     'gemini-flash-lite-latest',
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-    'gemini-3.5-flash',
   ];
 
   let lastError = null;
@@ -286,7 +284,7 @@ async function generateWithXAI(prompt) {
 /**
  * Core RAG Chat handler: reads relevant notes/PYQs and generates strictly academic AI response.
  */
-async function answerAcademicQuery({ question, subject = 'All' }) {
+async function answerAcademicQuery({ question, subject = 'All', detailed = true }) {
   const normSub = normalizeSubject(subject);
 
   // 1. Check for quick casual / greeting intent to avoid launching full lectures on "hey"
@@ -399,6 +397,8 @@ STUDENT'S QUESTION: ${question}
 
 ${contextSnippet}
 
+${detailed ? '' : 'QUICK MODE ACTIVE: The student wants a SHORT answer. Give only the essential answer — max ~150 words, no section headings, no two-part structure, no lecture. If a list is asked, give just the list.'}
+
 STRICT GUARDRAILS & RESPONSE RULES:
 1. STRICT ACADEMIC & SUBJECT FOCUS (NO OFF-TOPIC):
    - You are strictly an academic engineering assistant for Parul University students.
@@ -407,17 +407,21 @@ STRICT GUARDRAILS & RESPONSE RULES:
      "I am specialized strictly for Parul University academic engineering subjects and exam preparation (${normSub}). Please ask a question related to your syllabus, coursework notes, or university exam preparation."
    - Never generate essays or answers for non-academic topics.
 
-2. ANSWER LIKE A FACULTY MEMBER — MANDATORY TWO-PART STRUCTURE:
-   For every academic question, answer in exactly these two parts, in this order:
-   PART 1 — Begin with the heading "### ✍️ How to Write This in Your Exam"
-     - Give the ready-to-write exam answer FIRST: exactly what the student should reproduce in the answer sheet to score full marks.
-     - Present it as numbered points the way marks are awarded: crisp definition, key formula/recurrence, algorithm steps or derivation outline, a small table or diagram description if the question needs one, complexity, and a one-line conclusion.
-     - Make it self-contained so a student can copy this part into their exam as-is.
-   PART 2 — Then continue with the heading "### 📚 Faculty Explanation"
-     - Now teach the topic in depth like a faculty member at the blackboard: the intuition, why it works, a worked example, and the common mistakes students make in exams.
-   - Never merge or reorder the two parts; the exam answer always comes first.
-   - The "✍️ How to Write This in Your Exam" heading must be the VERY FIRST content of your reply — do not add any title, preamble, or other headings before it.
-   - NEVER start with self-introductions ("Hello! I am Noteversity...", "Welcome back!"). Jump straight into Part 1. End cleanly with no filler goodbyes.
+2. ANSWER LIKE A FACULTY MEMBER — PICK THE RIGHT FORMAT FOR THE QUESTION:
+   A) CONCEPT QUESTIONS (explain / derive / prove / compare / "what is X and how does it work" — exam-style questions):
+      Use the mandatory two-part structure, in this order:
+      PART 1 — Begin with the heading "### ✍️ How to Write This in Your Exam"
+        - The ready-to-write exam answer FIRST: exactly what the student should reproduce in the answer sheet to score full marks.
+        - Numbered points the way marks are awarded: crisp definition, key formula/recurrence, algorithm steps or derivation outline, a small table or diagram description if needed, complexity, one-line conclusion.
+        - Make it self-contained so a student can copy this part into their exam as-is.
+      PART 2 — Then continue with the heading "### 📚 Faculty Explanation"
+        - Teach the topic in depth like a faculty member at the blackboard: intuition, why it works, a worked example, common exam mistakes.
+      - Never merge or reorder the parts. The "✍️" heading must be the VERY FIRST content of the reply.
+   B) LIST / OVERVIEW / LOOKUP QUESTIONS (e.g. "topics in unit 8", "syllabus of X", "list the units", "what does the PDF say about...", full-forms, one-liner factual or yes/no questions):
+      - SKIP the two-part structure entirely. Answer directly and concisely with a clean bullet/numbered list or a short factual answer, grounded in the excerpts.
+      - If the question asks what a unit/document covers, LIST the actual topics found in the provided excerpts — do not invent topics and do not lecture about one of them.
+   C) QUICK MODE (when instructed below): answer in the shortest useful form — essentials only, no headings, no two-part structure, max ~150 words.
+   - NEVER start with self-introductions ("Hello! I am Noteversity...", "Welcome back!"). End cleanly with no filler goodbyes.
 
 3. CLEAN TABLES, MATH & CODE FORMATTING:
    - For tabular data (DP tables, comparison tables, truth tables), use GitHub-style markdown tables with a header row and a |---|---| separator row. Keep tables to 6 columns or fewer and keep cell text short.

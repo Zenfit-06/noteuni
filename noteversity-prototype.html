@@ -812,7 +812,8 @@
         <div class="chat-main" style="flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; height:100%;">
           <div class="chat-head">
             <span id="chanTitle">ChatBot</span>
-            <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+            <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <button id="chatModeBtn" class="toolbar-btn" style="font-weight:700;" onclick="toggleChatMode()" title="Switch to quick short answers">📚 Detailed</button>
               <select id="chatSubjectSelect" style="padding:6px 12px; border:1.5px solid var(--rule); border-radius:4px; font-size:13px; font-weight:600; font-family:inherit; color:var(--text); background:#fff; cursor:pointer; outline:none;">
                 <option value="DAA">DAA</option>
                 <option value="AI">AI</option>
@@ -1232,6 +1233,18 @@ function initSocket() { /* Real-time AI chat runs over REST */ }
 
 let isChatBotTyping = false;
 
+let chatQuickMode = false;
+function toggleChatMode(){
+  chatQuickMode = !chatQuickMode;
+  const btn = document.getElementById('chatModeBtn');
+  if (btn) {
+    btn.textContent = chatQuickMode ? '⚡ Quick' : '📚 Detailed';
+    btn.title = chatQuickMode ? 'Switch to detailed faculty answers' : 'Switch to quick short answers';
+    btn.style.color = chatQuickMode ? 'var(--amber-dark)' : 'var(--text-soft)';
+  }
+  showToast(chatQuickMode ? '⚡ Quick mode — short answers' : '📚 Detailed mode — full faculty answers');
+}
+
 function formatMarkdown(text) {
   if (!text) return '';
 
@@ -1522,7 +1535,7 @@ async function sendMsg() {
     const res = await fetch(`${API_BASE}/api/chat/ask`, {
       method: 'POST',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ message: val, subject: subj }),
+      body: JSON.stringify({ message: val, subject: subj, detailed: !chatQuickMode }),
       signal: currentChatAbortController.signal
     });
 
