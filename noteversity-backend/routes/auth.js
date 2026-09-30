@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -11,6 +12,25 @@ function generateOtp() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// Simple in-memory rate limiter: allows `max` hits per key per sliding window.
+const rateBuckets = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const hits = (rateBuckets.get(key) || []).filter((t) => now - t < windowMs);
+  if (hits.length >= max) {
+    rateBuckets.set(key, hits);
+    return false;
+  }
+  hits.push(now);
+  rateBuckets.set(key, hits);
+  if (rateBuckets.size > 10000) {
+    for (const [k, v] of rateBuckets) {
+      if (v.every((t) => now - t >= windowMs)) rateBuckets.delete(k);
+    }
+  }
+  return true;
+}
+
 // POST /api/auth/request-otp
 router.post('/request-otp', async (req, res) => {
   try {
@@ -20,11 +40,16 @@ router.post('/request-otp', async (req, res) => {
       return res.status(400).json({ message: `Use your official @${process.env.ALLOWED_EMAIL_DOMAIN} email` });
     }
 
+    const normalizedEmail = email.toLowerCase();
+    if (!rateLimit('otp-req:' + normalizedEmail, 3, 10 * 60 * 1000)) {
+      return res.status(429).json({ message: 'Too many OTP requests. Please wait before requesting again.' });
+    }
+
     const otp = generateOtp();
     const otpHash = await bcrypt.hash(otp, 10);
     const otpExpiresAt = new Date(Date.now() + Number(process.env.OTP_EXPIRY_MINUTES) * 60 * 1000);
 
-    let user = await User.findOne({ email: email.toLowerCase() });
+    let user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       user = new User({ name: name || email.split('@')[0], email: email.toLowerCase(), rollNumber, branch, semester });
     }
@@ -45,7 +70,13 @@ router.post('/request-otp', async (req, res) => {
 router.post('/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ email: (email || '').toLowerCase() });
+    const normalizedEmail = (email || '').toLowerCase();
+
+    if (!rateLimit('otp-ver:' + normalizedEmail, 5, 10 * 60 * 1000)) {
+      return res.status(429).json({ message: 'Too many attempts, request a new OTP' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user || !user.otpHash || !user.otpExpiresAt) {
       return res.status(400).json({ message: 'Request an OTP first' });
@@ -84,20 +115,25 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
-// POST /api/auth/demo-session
-router.post('/demo-session', async (req, res) => {
+// POST /api/auth/guest-session — silent guest session for the login-free app.
+// Creates a fresh Guest user per browser; can never return the admin account.
+router.post('/guest-session', async (req, res) => {
   try {
-    let user = await User.findOne({ email: 'admin@paruluniversity.ac.in' });
-    if (!user) {
-      user = await User.create({
-        name: 'Parul Admin',
-        email: 'admin@paruluniversity.ac.in',
-        rollNumber: '2113101',
-        branch: 'Computer Science & Engineering',
-        semester: 5,
-        isVerified: true,
-      });
+    if (!rateLimit('guest:' + (req.ip || 'unknown'), 20, 10 * 60 * 1000)) {
+      return res.status(429).json({ message: 'Too many requests. Please try again later.' });
     }
+
+    const suffix = crypto.randomBytes(4).toString('hex');
+    const user = await User.create({
+      name: 'Guest',
+      email: `guest-${suffix}@${process.env.ALLOWED_EMAIL_DOMAIN || 'paruluniversity.ac.in'}`,
+      branch: 'CSE',
+      semester: 5,
+      isVerified: true,
+    });
+
+    // Persist so guest ids (and their chat history) survive server restarts
+    await syncUsersToJson(User);
 
     const secret = process.env.JWT_SECRET || 'noteversity_dev_secret_key_2026_jwt_token_secure';
     const token = jwt.sign({ userId: user._id }, secret, {
@@ -115,8 +151,8 @@ router.post('/demo-session', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to create demo session' });
+    console.error('Guest session error:', err);
+    res.status(500).json({ message: 'Failed to create guest session' });
   }
 });
 
@@ -204,14 +240,13 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ message: 'No account found with this email. Please sign up first.' });
     }
 
-    if (user.passwordHash) {
-      const isMatch = await bcrypt.compare(password, user.passwordHash);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Incorrect password. Please try again.' });
-      }
-    } else {
-      user.passwordHash = await bcrypt.hash(password, 10);
-      await user.save();
+    if (!user.passwordHash) {
+      return res.status(403).json({ message: 'This account was created via OTP and has no password set.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Incorrect password. Please try again.' });
     }
 
     const secret = process.env.JWT_SECRET || 'noteversity_dev_secret_key_2026_jwt_token_secure';

@@ -10,6 +10,8 @@ const { syncPyqsToJson, syncUsersToJson } = require('../services/jsonStore');
 
 const router = express.Router();
 
+const VALID_SUBJECTS = ['DAA', 'AI', 'AWS', 'EPJ', 'TOC', 'QR'];
+
 // GET /api/pyqs?subject=DAA&year=2024&examType=EndSem
 router.get('/', requireAuth, async (req, res) => {
   const { subject, semester, branch, year, examType, search } = req.query;
@@ -30,13 +32,22 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, r
   try {
     const { title, subject, branch, semester, year, examType, isSolved } = req.body;
     if (!req.file) return res.status(400).json({ message: 'File is required' });
+    if (!title || !title.trim() || !VALID_SUBJECTS.includes(subject)) {
+      if (req.file.path) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({ message: 'Title and subject are required' });
+    }
+    const yearNum = Number(year);
+    if (!Number.isInteger(yearNum) || yearNum < 2000 || yearNum > 2100) {
+      if (req.file.path) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({ message: 'A valid year is required' });
+    }
 
     const pyq = await Pyq.create({
       title,
       subject,
       branch,
       semester,
-      year,
+      year: yearNum,
       examType,
       isSolved: isSolved === 'true',
       fileUrl: `/uploads/${req.file.filename}`,
@@ -47,6 +58,8 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, r
     res.status(201).json(pyq);
   } catch (err) {
     console.error(err);
+    // Remove the just-saved file so failed creates don't leave orphans
+    if (req.file && req.file.path) fs.unlink(req.file.path, () => {});
     res.status(500).json({ message: 'Upload failed' });
   }
 });

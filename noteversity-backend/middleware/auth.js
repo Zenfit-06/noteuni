@@ -2,8 +2,12 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 async function requireAuth(req, res, next) {
+  // Bearer header for API calls, ?token= query for iframe/download links
   const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
+  let token = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
+  if (!token && typeof req.query.token === 'string') {
+    token = req.query.token.trim();
+  }
 
   if (!token || token === 'undefined' || token === 'null') {
     return res.status(401).json({ message: 'Authentication required. Please sign in.' });

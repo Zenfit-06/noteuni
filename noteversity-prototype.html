@@ -605,121 +605,14 @@
 </head>
 <body>
 
-<!-- ============ LOGIN SCREEN ============ -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-brand">
-      <div class="glyph disp">N</div>
-      <div class="name disp">NOTEVERSITY</div>
-    </div>
-    <div class="login-subtitle">Parul University Academic Repository &amp; Batch Network</div>
-
-    <div class="login-alert" id="loginAlert"></div>
-
-    <div id="savedSessionNotice" style="display:none; background:rgba(8,131,149,0.08); border:1.5px solid var(--rule); border-radius:6px; padding:12px 14px; margin-bottom:14px; text-align:left;">
-      <div style="font-size:12px; font-weight:700; color:var(--head); margin-bottom:2px;">
-        👋 Welcome back, <span id="savedSessionName">User</span>!
-      </div>
-      <div style="font-size:11.5px; color:var(--text-soft); margin-bottom:10px;" id="savedSessionEmail"></div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-login" id="btnResumeSession" style="padding:7px 14px; font-size:12px; flex:1;" onclick="resumeSavedSession()">Enter Portal →</button>
-        <button class="btn-login" style="padding:7px 14px; font-size:12px; background:#C84B31; flex:1;" onclick="clearSavedSession()">Switch Account</button>
-      </div>
-    </div>
-
-    <div class="auth-tabs">
-      <div class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</div>
-      <div class="auth-tab" onclick="switchAuthTab('signup')">Create Account</div>
-    </div>
-
-    <div id="fileProtocolWarning" style="display:none; background:#FFF3CD; border:1px solid #FFE69C; color:#856404; padding:10px 12px; border-radius:4px; font-size:12px; margin-bottom:14px; line-height:1.4;">
-      ⚠️ <b>Notice:</b> You are opening this HTML file directly (<code>file://</code>). Some browsers block network calls from local files. Please open <a href="http://localhost:5000" style="color:#0A4D68; font-weight:700; text-decoration:underline;">http://localhost:5000</a> in your browser.
-    </div>
-
-    <!-- SIGN IN FORM -->
-    <div class="auth-form active" id="form-signin">
-      <div style="background:rgba(8,131,149,0.08); border:1.5px solid var(--rule); border-radius:6px; padding:12px 14px; margin-bottom:14px; cursor:pointer; transition:all 0.15s ease;" onclick="fillAdminCredentials()" title="Click to auto-fill demo admin credentials">
-        <div style="font-size:12px; font-weight:700; color:var(--head); margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;">
-          <span>🔑 Demo Admin Credentials</span>
-          <span style="font-size:11px; background:var(--amber); color:#fff; border-radius:3px; padding:2px 8px; font-weight:700;">⚡ Click to Fill</span>
-        </div>
-        <div style="font-size:11.5px; color:var(--text-soft); line-height:1.4;">
-          Email: <code style="font-weight:700; color:var(--ink);">admin@paruluniversity.ac.in</code><br>
-          Password: <code style="font-weight:700; color:var(--ink);">admin123</code>
-        </div>
-      </div>
-
-      <div class="login-field">
-        <label>College Email</label>
-        <input type="email" id="loginEmail" placeholder="yourname@paruluniversity.ac.in">
-        <div class="hint">Only @paruluniversity.ac.in emails are accepted</div>
-      </div>
-      <div class="login-field">
-        <label>Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleSignIn()">
-          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('loginPassword', this)" title="Show password">👁</button>
-        </div>
-      </div>
-      <button class="btn-login" id="btnSignIn" onclick="handleSignIn()">Sign In →</button>
-      <button class="btn-login" type="button" style="background:#088395; margin-top:8px;" onclick="fillAdminCredentials()">⚡ Fill Demo Admin Credentials</button>
-      <div class="login-switch">New student? <a onclick="switchAuthTab('signup')">Create an account</a></div>
-    </div>
-
-    <!-- SIGN UP FORM -->
-    <div class="auth-form" id="form-signup">
-      <div class="login-field">
-        <label>Full Name</label>
-        <input type="text" id="signupName" placeholder="e.g. Rohan Verma">
-      </div>
-      <div class="login-field">
-        <label>College Email</label>
-        <input type="email" id="signupEmail" placeholder="rohan@paruluniversity.ac.in">
-        <div class="hint">Must end with @paruluniversity.ac.in</div>
-      </div>
-      <div class="login-field">
-        <label>Create Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="signupPassword" placeholder="Minimum 6 characters">
-          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('signupPassword', this)" title="Show password">👁</button>
-        </div>
-        <div class="hint">Must be at least 6 characters</div>
-      </div>
-      <div class="login-field">
-        <label>Confirm Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="signupConfirmPassword" placeholder="Re-enter your password" onkeydown="if(event.key==='Enter')handleSignUp()">
-          <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('signupConfirmPassword', this)" title="Show password">👁</button>
-        </div>
-      </div>
-      <div class="login-field">
-        <label>Roll Number</label>
-        <input type="text" id="signupRoll" placeholder="e.g. 2113105">
-      </div>
-      <div class="login-field">
-        <label>Branch</label>
-        <select id="signupBranch">
-          <option>Computer Science &amp; Engineering</option>
-          <option>Information Technology</option>
-          <option>Electronics &amp; Communication</option>
-          <option>Electrical Engineering</option>
-          <option>Mechanical Engineering</option>
-          <option>Civil Engineering</option>
-        </select>
-      </div>
-      <div class="login-field">
-        <label>Semester</label>
-        <select id="signupSemester" style="background:#f8fafc; color:var(--text); font-weight:600; cursor:not-allowed;" disabled>
-          <option value="5" selected>Semester 5 (Currently Active)</option>
-        </select>
-        <div class="hint" style="color:var(--amber); font-weight:600; margin-top:4px; font-size:11.5px;">
-          ⚡ Only Semester 5 is available currently. We are working on other semesters!
-        </div>
-      </div>
-      <button class="btn-login" id="btnSignUp" onclick="handleSignUp()">Create Account &amp; Enter Portal →</button>
-      <div class="login-switch">Already registered? <a onclick="switchAuthTab('signin')">Sign In</a></div>
-    </div>
+<!-- ============ BOOT ERROR (shown only when the server is unreachable) ============ -->
+<div id="boot-error" style="display:none; position:fixed; inset:0; background:var(--paper); z-index:9999; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:24px;">
+  <div style="font-size:34px;">📡</div>
+  <div style="font-weight:700; color:var(--head); font-size:16px;">Cannot reach the Noteversity server</div>
+  <div style="font-size:13px; color:var(--text-soft); max-width:360px; line-height:1.5;">
+    Make sure the backend is running (<code>start.bat</code> or <code>npm start</code> inside <code>noteversity-backend</code>), then retry.
   </div>
+  <button class="btn-login" style="padding:9px 22px;" onclick="location.reload()">Retry</button>
 </div>
 
 <!-- ============ APP ============ -->
@@ -745,8 +638,11 @@
       </div>
     </div>
     <div style="padding: 6px 16px 14px;">
-      <button onclick="handleLogout()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:7px 12px; font-size:11.5px; font-weight:600; color:var(--text-soft); background:rgba(0,0,0,0.03); border:1px solid var(--rule); border-radius:4px; cursor:pointer; font-family:inherit; transition:all .15s;">
-        <span>🚪</span> Log Out / Switch Account
+      <button id="btnAdminLogin" onclick="openAdminLogin()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:7px 12px; font-size:11.5px; font-weight:600; color:var(--text-soft); background:rgba(0,0,0,0.03); border:1px solid var(--rule); border-radius:4px; cursor:pointer; font-family:inherit; transition:all .15s;">
+        <span>🛡️</span> Admin Login
+      </button>
+      <button id="btnExitAdmin" onclick="exitAdmin()" style="display:none; width:100%; align-items:center; justify-content:center; gap:8px; padding:7px 12px; font-size:11.5px; font-weight:600; color:var(--text-soft); background:rgba(0,0,0,0.03); border:1px solid var(--rule); border-radius:4px; cursor:pointer; font-family:inherit; transition:all .15s;">
+        <span>↩</span> Exit Admin Mode
       </button>
     </div>
   </aside>
@@ -760,9 +656,6 @@
         <input placeholder="Search notes, PYQs, subjects…" id="globalSearch">
       </div>
       <button id="themeToggle" class="theme-toggle" style="margin-left:auto;" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
-      <button onclick="handleLogout()" style="display:flex; align-items:center; gap:6px; padding:6px 12px; font-size:12px; font-weight:600; color:var(--text-soft); background:var(--paper-raised); border:1px solid var(--rule); border-radius:4px; cursor:pointer; font-family:inherit;">
-        <span>🚪</span> Log out
-      </button>
     </div>
 
     <!-- DASHBOARD -->
@@ -865,7 +758,6 @@
         <div class="p-row"><span class="k">Branch</span><span class="v" id="profileBranch">Computer Science &amp; Engineering</span></div>
         <div class="p-row" id="profileBatchRow"><span class="k">Batch</span><span class="v" id="profileBatch">—</span></div>
         <div class="p-row"><span class="k">Items contributed</span><span class="v" id="profileContrib">0</span></div>
-        <div style="margin-top:18px;"><button class="btn-login" style="background:var(--red);" onclick="handleLogout()">Log out</button></div>
       </div>
     </div>
   </div>
@@ -917,9 +809,26 @@
   </div>
 </div>
 
+<!-- Admin login modal -->
+<div class="modal-bg" id="adminModal">
+  <div class="modal" style="max-width:360px;">
+    <h3>🛡️ Admin sign in</h3>
+    <div class="field"><label>Admin password</label>
+      <div class="pw-wrap">
+        <input type="password" id="adminPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAdminLogin()">
+        <button type="button" class="pw-toggle" onclick="togglePasswordVisibility('adminPassword', this)" title="Show password">👁</button>
+      </div>
+    </div>
+    <div id="adminLoginError" style="display:none; font-size:12px; color:var(--red); font-weight:600; margin-bottom:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeAdminLogin()">Cancel</button>
+      <button class="btn-primary" id="btnAdminSubmit" onclick="handleAdminLogin()">Sign in</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
 /* ---------------- CONFIG & AUTH ---------------- */
 const API_BASE = window.location.port === '5000' ? '' : 'http://localhost:5000';
@@ -1183,7 +1092,7 @@ async function downloadItem(id, title, type = 'note'){
       showToast("Downloaded: " + title);
       if(data.fileUrl){
         const link = document.createElement('a');
-        link.href = `${API_BASE}${data.fileUrl}`;
+        link.href = `${API_BASE}${data.fileUrl}${authToken ? `?token=${encodeURIComponent(authToken)}` : ''}`;
         link.download = (title || 'document').replace(/[^a-zA-Z0-9_-]/g, '_') + '.pdf';
         document.body.appendChild(link);
         link.click();
@@ -1582,9 +1491,13 @@ async function sendMsg() {
 /* ---------------- UPLOAD MODAL ---------------- */
 let uploadKind = 'note';
 function openPreview(fileUrl, title){
+  // /uploads requires auth — the iframe can't send headers, so pass ?token=
+  const src = authToken
+    ? `${API_BASE}${fileUrl}${fileUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(authToken)}`
+    : `${API_BASE}${fileUrl}`;
   document.getElementById('previewTitle').textContent = title || 'Preview';
-  document.getElementById('previewFrame').src = API_BASE + fileUrl;
-  document.getElementById('previewOpenTab').href = API_BASE + fileUrl;
+  document.getElementById('previewFrame').src = src;
+  document.getElementById('previewOpenTab').href = src;
   document.getElementById('previewModal').classList.add('show');
 }
 function closePreview(){
@@ -1758,66 +1671,84 @@ function showToast(msg){
   toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
 }
 
-/* ---------------- AUTH UI LOGIC ---------------- */
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-  if (tab === 'signup') {
-    document.querySelectorAll('.auth-tab')[1].classList.add('active');
-    document.getElementById('form-signup').classList.add('active');
-  } else {
-    document.querySelectorAll('.auth-tab')[0].classList.add('active');
-    document.getElementById('form-signin').classList.add('active');
-  }
-  hideLoginAlert();
-}
-
-function showLoginAlert(msg) {
-  const el = document.getElementById('loginAlert');
-  el.textContent = msg;
-  el.classList.add('show');
-  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-function hideLoginAlert() {
-  document.getElementById('loginAlert').classList.remove('show');
-}
-
+/* ---------------- SESSION (guest boot + admin swap) ---------------- */
 function enterApp(data) {
   authToken = data.token;
   currentUser = data.user;
   safeSet('noteversity_token', authToken);
   safeSet('noteversity_user', JSON.stringify(currentUser));
 
-  // Trigger smooth exit transition on login card and screen
-  const card = document.querySelector('.login-card');
-  const screen = document.getElementById('login-screen');
-  if (card) card.classList.add('card-exit');
-  if (screen) screen.classList.add('screen-exit');
+  const shell = document.getElementById('app-shell');
+  shell.style.display = 'flex';
+  shell.classList.remove('app-enter-anim');
+  void shell.offsetWidth; // force browser repaint for animation
+  shell.classList.add('app-enter-anim');
 
-  setTimeout(() => {
-    if (screen) {
-      screen.classList.add('hidden');
-      screen.classList.remove('screen-exit');
+  populateUserUI();
+  initSocket();
+  renderDashboard();
+  fetchNotes();
+  fetchPyqs();
+  loadChatHistory();
+  renderMsgs();
+
+  const firstName = (currentUser.name || 'Student').split(' ')[0];
+  showToast(`Welcome, ${escapeHtml(firstName)}!`);
+}
+
+/* Re-render everything that depends on the current user (admin ⇄ guest swap) */
+function refreshForUser() {
+  botChatData = [];
+  populateUserUI();
+  renderDashboard();
+  fetchNotes();
+  fetchPyqs();
+  loadChatHistory();
+  renderMsgs();
+}
+
+function showBootError() {
+  const el = document.getElementById('boot-error');
+  if (el) el.style.display = 'flex';
+}
+
+/* Mint a fresh guest session (used at boot and when exiting admin with no
+   stashed guest session). Guests are created server-side per browser. */
+async function guestSessionAndEnter() {
+  const res = await fetch(`${API_BASE}/api/auth/guest-session`, { method: 'POST' });
+  if (!res.ok) throw new Error('Guest session failed');
+  const data = await res.json();
+  enterApp(data);
+}
+
+async function bootIntoApp() {
+  applyTheme(safeGet('noteversity_theme') || 'light');
+
+  const savedToken = safeGet('noteversity_token');
+  let savedUser = null;
+  try { savedUser = JSON.parse(safeGet('noteversity_user') || 'null'); } catch (e) { savedUser = null; }
+
+  if (savedToken && savedToken !== 'undefined' && savedToken !== 'null' && savedUser) {
+    try {
+      // Validate the stored token before entering — expired sessions fall
+      // through to a fresh guest session instead of a page of silent 401s.
+      const res = await fetch(`${API_BASE}/api/dashboard`, { headers: { 'Authorization': `Bearer ${savedToken}` } });
+      if (res.ok) {
+        enterApp({ token: savedToken, user: savedUser });
+        return;
+      }
+    } catch (err) {
+      // Server unreachable — nothing will work; show the retry screen.
+      showBootError();
+      return;
     }
-    if (card) card.classList.remove('card-exit');
+  }
 
-    const shell = document.getElementById('app-shell');
-    shell.style.display = 'flex';
-    shell.classList.remove('app-enter-anim');
-    void shell.offsetWidth; // force browser repaint for animation
-    shell.classList.add('app-enter-anim');
-
-    populateUserUI();
-    initSocket();
-    renderDashboard();
-    fetchNotes();
-    fetchPyqs();
-    loadChatHistory();
-    renderMsgs();
-
-    const firstName = (currentUser.name || 'Student').split(' ')[0];
-    showToast(`Welcome, ${escapeHtml(firstName)}!`);
-  }, 350);
+  try {
+    await guestSessionAndEnter();
+  } catch (err) {
+    showBootError();
+  }
 }
 
 function isAdmin() {
@@ -1879,14 +1810,77 @@ function populateUserUI() {
   const upPyqBtn = document.getElementById('btnUploadPyq');
   if (upNotesBtn) upNotesBtn.style.display = admin ? 'flex' : 'none';
   if (upPyqBtn) upPyqBtn.style.display = admin ? 'flex' : 'none';
+
+  // Sidebar footer: admin login icon for guests, exit option for admins
+  const btnAdminLogin = document.getElementById('btnAdminLogin');
+  const btnExitAdmin = document.getElementById('btnExitAdmin');
+  if (btnAdminLogin) btnAdminLogin.style.display = admin ? 'none' : 'flex';
+  if (btnExitAdmin) btnExitAdmin.style.display = admin ? 'flex' : 'none';
 }
 
-function fillAdminCredentials() {
-  const emailInput = document.getElementById('loginEmail');
-  const passInput = document.getElementById('loginPassword');
-  if (emailInput) emailInput.value = 'admin@paruluniversity.ac.in';
-  if (passInput) passInput.value = 'admin123';
-  hideLoginAlert();
+/* ---------------- ADMIN LOGIN (bottom-left icon) ---------------- */
+function openAdminLogin() {
+  document.getElementById('adminModal').classList.add('show');
+  const errBox = document.getElementById('adminLoginError');
+  errBox.style.display = 'none';
+  const input = document.getElementById('adminPassword');
+  input.value = '';
+  setTimeout(() => input.focus(), 60);
+}
+function closeAdminLogin() {
+  document.getElementById('adminModal').classList.remove('show');
+}
+
+async function handleAdminLogin() {
+  const password = document.getElementById('adminPassword').value || '';
+  const errBox = document.getElementById('adminLoginError');
+  const btn = document.getElementById('btnAdminSubmit');
+  errBox.style.display = 'none';
+  if (!password) { errBox.textContent = 'Please enter the admin password.'; errBox.style.display = 'block'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    // Stash the guest session so "Exit Admin Mode" can restore it
+    if (!isAdmin() && authToken) {
+      safeSet('noteversity_guest_token', authToken);
+      safeSet('noteversity_guest_user', JSON.stringify(currentUser));
+    }
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'admin@paruluniversity.ac.in', password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errBox.textContent = data.message || 'Admin login failed';
+      errBox.style.display = 'block';
+      return;
+    }
+    closeAdminLogin();
+    enterApp(data);
+  } catch (err) {
+    errBox.textContent = 'Cannot connect to server.';
+    errBox.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
+}
+
+function exitAdmin() {
+  const guestToken = safeGet('noteversity_guest_token');
+  let guestUser = null;
+  try { guestUser = JSON.parse(safeGet('noteversity_guest_user') || 'null'); } catch (e) { guestUser = null; }
+
+  if (guestToken && guestUser) {
+    enterApp({ token: guestToken, user: guestUser });
+  } else {
+    // No stashed guest session (e.g. admin token predates the guest flow)
+    guestSessionAndEnter().catch(() => showBootError());
+  }
+  try { localStorage.removeItem('noteversity_guest_token'); } catch(e){}
+  try { localStorage.removeItem('noteversity_guest_user'); } catch(e){}
 }
 
 function togglePasswordVisibility(inputId, btn) {
@@ -1896,99 +1890,6 @@ function togglePasswordVisibility(inputId, btn) {
   input.type = show ? 'text' : 'password';
   btn.textContent = show ? '🙈' : '👁';
   btn.title = show ? 'Hide password' : 'Show password';
-}
-
-async function handleSignIn() {
-  hideLoginAlert();
-  const email = (document.getElementById('loginEmail').value || '').trim().toLowerCase();
-  const password = (document.getElementById('loginPassword').value || '');
-
-  if (!email) { showLoginAlert('Please enter your college email.'); return; }
-  if (!email.endsWith('@paruluniversity.ac.in')) { showLoginAlert('Only @paruluniversity.ac.in emails are allowed.'); return; }
-  if (!password) { showLoginAlert('Please enter your password.'); return; }
-
-  const btn = document.getElementById('btnSignIn');
-  btn.disabled = true;
-  btn.textContent = 'Signing in…';
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      showLoginAlert(data.message || 'Login failed');
-      btn.disabled = false; btn.textContent = 'Sign In →';
-      return;
-    }
-    enterApp(data);
-  } catch (err) {
-    showLoginAlert('Cannot connect to server. Is the backend running?');
-    btn.disabled = false; btn.textContent = 'Sign In →';
-  }
-}
-
-async function handleSignUp() {
-  hideLoginAlert();
-  const name = (document.getElementById('signupName').value || '').trim();
-  const email = (document.getElementById('signupEmail').value || '').trim().toLowerCase();
-  const password = (document.getElementById('signupPassword').value || '');
-  const confirmPassword = (document.getElementById('signupConfirmPassword').value || '');
-  const rollNumber = (document.getElementById('signupRoll').value || '').trim();
-  const branch = document.getElementById('signupBranch').value;
-  const semester = document.getElementById('signupSemester').value;
-
-  if (!name) { showLoginAlert('Please enter your full name.'); return; }
-  if (!email) { showLoginAlert('Please enter your college email.'); return; }
-  if (!email.endsWith('@paruluniversity.ac.in')) { showLoginAlert('Only @paruluniversity.ac.in emails are allowed.'); return; }
-  if (!password || password.length < 6) { showLoginAlert('Password must be at least 6 characters long.'); return; }
-  if (password !== confirmPassword) { showLoginAlert('Passwords do not match. Please check again.'); return; }
-
-  const btn = document.getElementById('btnSignUp');
-  btn.disabled = true;
-  btn.textContent = 'Creating account…';
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, rollNumber, branch, semester })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      showLoginAlert(data.message || 'Signup failed');
-      btn.disabled = false; btn.textContent = 'Create Account & Enter Portal →';
-      return;
-    }
-    enterApp(data);
-  } catch (err) {
-    showLoginAlert('Cannot connect to server. Is the backend running?');
-    btn.disabled = false; btn.textContent = 'Create Account & Enter Portal →';
-  }
-}
-
-function handleLogout() {
-  authToken = '';
-  currentUser = null;
-  botChatData = [];
-  document.body.classList.remove('sidebar-open');
-  try { localStorage.removeItem('noteversity_token'); } catch(e){}
-  try { localStorage.removeItem('noteversity_user'); } catch(e){}
-  if (socket) { socket.disconnect(); socket = null; socketConnected = false; }
-  document.getElementById('app-shell').style.display = 'none';
-  document.getElementById('app-shell').classList.remove('app-enter-anim');
-  document.getElementById('login-screen').classList.remove('hidden');
-
-  // Reset form states
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('signupName').value = '';
-  document.getElementById('signupEmail').value = '';
-  document.getElementById('signupPassword').value = '';
-  document.getElementById('signupConfirmPassword').value = '';
-  document.getElementById('signupRoll').value = '';
-  hideLoginAlert();
-  switchAuthTab('signin');
 }
 
 /* ---------------- THEME (DARK MODE) ---------------- */
@@ -2004,71 +1905,7 @@ function toggleTheme(){
 }
 
 /* ---------------- INIT ---------------- */
-function resumeSavedSession() {
-  const savedToken = safeGet('noteversity_token');
-  const savedUser = safeGet('noteversity_user');
-  if (!savedToken || savedToken === 'undefined' || savedToken === 'null' || !savedUser) return;
-
-  let user = null;
-  try { user = JSON.parse(savedUser); } catch (e) { user = null; }
-  if (!user) { clearSavedSession(); return; }
-
-  const btn = document.getElementById('btnResumeSession');
-  if (btn) { btn.disabled = true; btn.textContent = 'Checking session…'; }
-
-  // Validate the stored token before entering — expired sessions get a clear
-  // message instead of an app full of silent 401s.
-  fetch(`${API_BASE}/api/dashboard`, { headers: { 'Authorization': `Bearer ${savedToken}` } })
-    .then((res) => {
-      if (!res.ok) {
-        clearSavedSession();
-        showLoginAlert('Your previous session expired. Please sign in again.');
-        return;
-      }
-      authToken = savedToken;
-      enterApp({ token: savedToken, user });
-    })
-    .catch(() => {
-      // Server unreachable — keep the session so the user can retry later.
-      showLoginAlert('Cannot reach the server right now. Your session is saved — please try again.');
-    })
-    .finally(() => {
-      if (btn) { btn.disabled = false; btn.textContent = 'Enter Portal →'; }
-    });
-}
-
-function clearSavedSession() {
-  try { localStorage.removeItem('noteversity_token'); } catch(e){}
-  try { localStorage.removeItem('noteversity_user'); } catch(e){}
-  const box = document.getElementById('savedSessionNotice');
-  if (box) box.style.display = 'none';
-}
-
-async function initApp(){
-  if (window.location.protocol === 'file:') {
-    const w = document.getElementById('fileProtocolWarning');
-    if (w) w.style.display = 'block';
-  }
-  applyTheme(safeGet('noteversity_theme') || 'light');
-  // Offer one-tap resume when a previous session exists
-  const savedToken = safeGet('noteversity_token');
-  const savedUser = safeGet('noteversity_user');
-  if (savedToken && savedToken !== 'undefined' && savedToken !== 'null' && savedUser) {
-    try {
-      const u = JSON.parse(savedUser);
-      const notice = document.getElementById('savedSessionNotice');
-      const nameEl = document.getElementById('savedSessionName');
-      const emailEl = document.getElementById('savedSessionEmail');
-      if (notice && nameEl && u) {
-        nameEl.textContent = u.name || 'Student';
-        if (emailEl) emailEl.textContent = (u.email || '') + (u.email === 'admin@paruluniversity.ac.in' ? ' (Admin)' : ' (Student)');
-        notice.style.display = 'block';
-      }
-    } catch(e) {}
-  }
-}
-
-initApp();
+bootIntoApp();
 </script>
 </body>
 </html>

@@ -3,12 +3,14 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 
 const connectDB = require('./config/db');
+const requireAuth = require('./middleware/auth');
 const Message = require('./models/Message');
-const User = require('./models/User');
 
 const authRoutes = require('./routes/auth');
 const notesRoutes = require('./routes/notes');
@@ -34,7 +36,18 @@ const io = new Server(server, {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Uploaded notes/PYQs require a signed-in session (JWT via header or ?token=
+// for iframe/download links). Filenames are sanitized against path traversal.
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+app.get('/uploads/:filename', requireAuth, (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(UPLOADS_DIR, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+  res.sendFile(filePath);
+});
 
 // Serve frontend prototype
 app.get('/', (req, res) => {
@@ -49,31 +62,36 @@ app.use('/api/chat', chatRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// ---- Central error handler: multer problems → clean JSON 400, everything
+// else → generic JSON 500 with the stack logged server-side only ----
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'File is too large. Maximum size is 20MB.'
+      : 'Upload error: ' + err.code;
+    return res.status(400).json({ message });
+  }
+  if (err && err.message && err.message.startsWith('Unsupported file type')) {
+    return res.status(400).json({ message: err.message });
+  }
+  console.error('[Server Error]:', err);
+  if (res.headersSent) return next(err);
+  return res.status(500).json({ message: 'Something went wrong. Please try again.' });
+});
+
 // ---- Socket.io real-time chat ----
-io.use(async (socket, next) => {
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token || token === 'undefined' || token === 'null') {
+    return next(new Error('Unauthorized socket connection'));
+  }
   try {
-    const token = socket.handshake.auth?.token;
-    if (token && token !== 'undefined' && token !== 'null') {
-      const secret = process.env.JWT_SECRET || 'noteversity_dev_secret_key_2026_jwt_token_secure';
-      const decoded = jwt.verify(token, secret);
-      socket.userId = decoded.userId;
-      return next();
-    }
-    const demoUser = await User.findOne({ email: 'admin@paruluniversity.ac.in' });
-    if (demoUser) {
-      socket.userId = demoUser._id;
-      return next();
-    }
-    next(new Error('Unauthorized socket connection'));
+    const secret = process.env.JWT_SECRET || 'noteversity_dev_secret_key_2026_jwt_token_secure';
+    const decoded = jwt.verify(token, secret);
+    socket.userId = decoded.userId;
+    return next();
   } catch (err) {
-    try {
-      const demoUser = await User.findOne({ email: 'admin@paruluniversity.ac.in' });
-      if (demoUser) {
-        socket.userId = demoUser._id;
-        return next();
-      }
-    } catch (e) {}
-    next(new Error('Unauthorized socket connection'));
+    return next(new Error('Unauthorized socket connection'));
   }
 });
 
