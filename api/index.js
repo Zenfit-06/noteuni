@@ -1,6 +1,6 @@
 /**
- * Vercel serverless entry point. Boots the database connection once per
- * lambda instance, then delegates every request to the Express app.
+ * Vercel serverless entry point. Keeps a verified MongoDB connection across
+ * frozen/thawed lambda instances, then delegates every request to Express.
  */
 
 // pdf-parse (via pdf.js) references browser globals at module load when its
@@ -14,31 +14,58 @@ const app = require('../noteversity-backend/app');
 const connectDB = require('../noteversity-backend/config/db');
 const mongoose = require('mongoose');
 
-// Serverless hardening: Vercel freezes lambdas between requests and their
-// sockets to Atlas die while frozen. Verify liveness with a real ping
-// (cached for 30s so we don't ping per request) and reconnect when stale.
 let connecting = null;
 let lastVerified = 0;
 const VERIFY_INTERVAL_MS = 30000;
 
-async function reconnectDb() {
-  try { await mongoose.disconnect(); } catch (e) { /* already down */ }
-  if (!connecting) {
-    connecting = connectDB().finally(() => { connecting = null; });
-  }
-  await connecting;
+function ping() {
+  return Promise.race([
+    mongoose.connection.db.admin().command({ ping: 1 }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('ping timeout')), 5000)),
+  ]);
 }
 
+/**
+ * Ensure a genuinely alive DB connection. Serialized so concurrent requests
+ * share one connect/verify cycle. Never force-disconnect — mongoose.connect
+ * re-establishes from any non-connected state, and disconnecting would pull
+ * the rug out from under concurrent requests.
+ */
 async function ensureDb() {
-  if (mongoose.connection.readyState !== 1 || Date.now() - lastVerified > VERIFY_INTERVAL_MS) {
+  if (connecting) {
+    await connecting;
+    return;
+  }
+  if (mongoose.connection.readyState === 1 && Date.now() - lastVerified < VERIFY_INTERVAL_MS) {
+    return;
+  }
+
+  connecting = (async () => {
     if (mongoose.connection.readyState !== 1) {
-      await reconnectDb();
+      await connectDB();
+      return;
     }
-    await Promise.race([
-      mongoose.connection.db.admin().command({ ping: 1 }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('ping timeout')), 5000)),
-    ]);
+    // readyState claims "connected" — verify the socket is truly alive
+    // (it dies whenever Vercel freezes the lambda for a while).
+    try {
+      await ping();
+      lastVerified = Date.now();
+    } catch (err) {
+      console.warn('[DB] stale connection detected, reconnecting');
+      await connectDB();
+      lastVerified = Date.now();
+    }
+  })();
+
+  try {
+    await connecting;
     lastVerified = Date.now();
+  } catch (err) {
+    // One clean retry through a fresh connect before giving up
+    await connectDB();
+    lastVerified = Date.now();
+  } finally {
+    connecting = null;
   }
 }
 
@@ -47,9 +74,9 @@ module.exports = async (req, res) => {
     await ensureDb();
     return app(req, res);
   } catch (err) {
-    console.error('[Boot/connection failure]');
-    res.statusCode = 500;
+    console.error('[DB unavailable]');
+    res.statusCode = 503;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ message: 'Server boot failed. Check environment variables and database.' }));
+    res.end(JSON.stringify({ message: 'Database is temporarily unreachable. Please try again.' }));
   }
 };
