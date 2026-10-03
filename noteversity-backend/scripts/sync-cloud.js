@@ -77,8 +77,7 @@ async function main() {
 
   const Note = require('../models/Note');
   const Pyq = require('../models/Pyq');
-  const { GridFSBucket } = require('mongodb');
-  const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'pdfs' });
+  const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'pdfs' });
   const gridfsCount = await bucket.find().toArray();
 
   console.log('\n✓ Sync complete.');

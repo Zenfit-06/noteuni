@@ -19,8 +19,7 @@ function gridfsBucket() {
   if (!mongoose.connection || !mongoose.connection.db) {
     throw new Error('Database connection is not ready for GridFS');
   }
-  const { GridFSBucket } = require('mongodb');
-  return new GridFSBucket(mongoose.connection.db, { bucketName: 'pdfs' });
+  return new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'pdfs' });
 }
 
 function safeName(filename) {

@@ -928,8 +928,14 @@ async function fetchNotes(){
       updateContribStat();
       updateTotalResStat();
     } else if (res.status === 401) {
-      await guestSessionAndEnter();
-      return fetchNotes();
+      await refreshGuestSession();
+      const retryRes = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
+      if (retryRes.ok) {
+        notes = await retryRes.json();
+        renderNotes();
+        updateContribStat();
+        updateTotalResStat();
+      }
     } else {
       if (!notes || notes.length === 0) {
         document.getElementById('notesGrid').innerHTML = `<div class="empty"><div class="ic">⚠️</div>Could not load notes. Please refresh.</div>`;
@@ -984,8 +990,14 @@ async function fetchPyqs(){
       updateContribStat();
       updateTotalResStat();
     } else if (res.status === 401) {
-      await guestSessionAndEnter();
-      return fetchPyqs();
+      await refreshGuestSession();
+      const retryRes = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
+      if (retryRes.ok) {
+        pyqs = await retryRes.json();
+        renderPyqs();
+        updateContribStat();
+        updateTotalResStat();
+      }
     } else {
       if (!pyqs || pyqs.length === 0) {
         document.getElementById('pyqGrid').innerHTML = `<div class="empty"><div class="ic">⚠️</div>Could not load PYQs. Please refresh.</div>`;
@@ -1685,20 +1697,33 @@ async function fetchSessionUser() {
   return data.user || null;
 }
 
+/* Deduplicated guest session refresher (shared by boot and 401 recovery) */
+let guestSessionPromise = null;
+async function refreshGuestSession() {
+  if (guestSessionPromise) return guestSessionPromise;
+  guestSessionPromise = (async () => {
+    try {
+      let res = await fetch(`${API_BASE}/api/auth/guest-session`, { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        await new Promise(r => setTimeout(r, 1000));
+        res = await fetch(`${API_BASE}/api/auth/guest-session`, { method: 'POST', credentials: 'include' });
+      }
+      if (!res.ok) throw new Error('Guest session failed');
+      const data = await res.json();
+      currentUser = data.user;
+      populateUserUI();
+      return currentUser;
+    } finally {
+      guestSessionPromise = null;
+    }
+  })();
+  return guestSessionPromise;
+}
+
 /* Mint a fresh guest session (used at boot when there is no valid session). */
 async function guestSessionAndEnter() {
-  const res = await fetch(`${API_BASE}/api/auth/guest-session`, { method: 'POST', credentials: 'include' });
-  if (!res.ok) {
-    // Retry once in case of cold-start / wake-up latency
-    await new Promise(r => setTimeout(r, 1200));
-    const retryRes = await fetch(`${API_BASE}/api/auth/guest-session`, { method: 'POST', credentials: 'include' });
-    if (!retryRes.ok) throw new Error('Guest session failed');
-    const retryData = await retryRes.json();
-    enterApp(retryData.user);
-    return;
-  }
-  const data = await res.json();
-  enterApp(data.user);
+  const user = await refreshGuestSession();
+  enterApp(user);
 }
 
 async function bootIntoApp() {
