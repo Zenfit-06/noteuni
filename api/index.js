@@ -14,6 +14,9 @@ const app = require('../noteversity-backend/app');
 const connectDB = require('../noteversity-backend/config/db');
 const mongoose = require('mongoose');
 
+mongoose.set('bufferCommands', false);
+mongoose.set('autoIndex', false);
+
 let connectingPromise = null;
 let lastVerified = 0;
 const VERIFY_INTERVAL_MS = 15000;

@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const seedInitialData = require('./seeder');
 const { IS_PROD } = require('./env');
 
+// Disable command buffering and automatic background indexing in serverless environments
+mongoose.set('bufferCommands', false);
+mongoose.set('autoIndex', false);
+
 function maskedUri(uri) {
   // Never log embedded credentials — show scheme + host + db only
   try {
