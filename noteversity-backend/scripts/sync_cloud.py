@@ -130,7 +130,7 @@ def main():
             local_uploader = local_email_by_id.get(str(doc.get("uploadedBy", "")))
             atlas_id = atlas_id_by_email.get(local_uploader)
             if not atlas_id:
-                atlas_id = atlas_id_by_email.get("faculty@paruluniversity.ac.in")
+                atlas_id = atlas_id_by_email.get("faculty@akgec.ac.in")
             doc["uploadedBy"] = atlas_id
             sync.op(sync.db[coll_name].replace_one, {"fileUrl": doc["fileUrl"]}, doc, upsert=True)
             upserted += 1

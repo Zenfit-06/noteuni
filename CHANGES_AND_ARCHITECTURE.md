@@ -1,4 +1,4 @@
-# Noteversity — Code Changes & Architecture Guide
+# AKGEC — Code Changes & Architecture Guide
 
 This document provides a comprehensive breakdown of **every file changed**, **every new file created**, **exact code modifications**, and **how the entire system works together**.
 
@@ -33,12 +33,12 @@ This document provides a comprehensive breakdown of **every file changed**, **ev
   JWT_SECRET=noteversity_dev_secret_key_2026_jwt_token_secure
   JWT_EXPIRES_IN=7d
   OTP_EXPIRY_MINUTES=10
-  ALLOWED_EMAIL_DOMAIN=paruluniversity.ac.in
+  ALLOWED_EMAIL_DOMAIN=akgec.ac.in
   SMTP_HOST=smtp.gmail.com
   SMTP_PORT=587
-  SMTP_USER=dev@noteversity.app
+  SMTP_USER=dev@akgec.ac.in
   SMTP_PASS=devpassword
-  SMTP_FROM="Noteversity <no-reply@noteversity.app>"
+  SMTP_FROM="AKGEC <no-reply@akgec.ac.in>"
   ```
 * **How it works:** `server.js` starts with `require('dotenv').config()`. This injects these variables into `process.env`, enabling JWT generation, route configurations, and email settings.
 
@@ -88,7 +88,7 @@ This document provides a comprehensive breakdown of **every file changed**, **ev
 ### File 3: `noteversity-backend/config/seeder.js` (NEW)
 * **What was done:** Created an initial database populator.
 * **How it works:**
-  1. Checks if user `admin@paruluniversity.ac.in` exists; if not, creates the demo user (`Parul Admin`, Roll 2113101, CSE Sem 5).
+  1. Checks if user `admin@akgec.ac.in` exists; if not, creates the demo user (`Ayush Rai`, Roll 2113101, CSE Sem 5).
   2. Creates companion users (`Karan M.`, `Faculty Notes`).
   3. Seeds the full course library from `config/libraryCatalog.js` — 63 notes across the 6 subjects (DAA, AI, AWS, EPJ, TOC, QR) served from `/uploads/`.
   4. Seeds 16 PYQs — mid-sem papers, end-sem papers, and question banks (solved & unsolved). Books and text-less scans are excluded from the catalog.
@@ -105,7 +105,7 @@ This document provides a comprehensive breakdown of **every file changed**, **ev
       await transporter.sendMail({
         from: process.env.SMTP_FROM,
         to: toEmail,
-        subject: 'Your Noteversity login OTP',
+        subject: 'Your AKGEC login OTP',
         html: `...`,
       });
       console.log(`[Mailer] OTP email sent to ${toEmail}`);
@@ -126,11 +126,11 @@ This document provides a comprehensive breakdown of **every file changed**, **ev
   ```javascript
   router.post('/demo-session', async (req, res) => {
     try {
-      let user = await User.findOne({ email: 'admin@paruluniversity.ac.in' });
+      let user = await User.findOne({ email: 'admin@akgec.ac.in' });
       if (!user) {
         user = await User.create({
-          name: 'Parul Admin',
-          email: 'admin@paruluniversity.ac.in',
+          name: 'Ayush Rai',
+          email: 'admin@akgec.ac.in',
           rollNumber: '2113101',
           branch: 'Computer Science & Engineering',
           semester: 5,
@@ -188,7 +188,7 @@ This document provides a comprehensive breakdown of **every file changed**, **ev
      ```
 * **How it works:**
   - Allows browsers to communicate with port 5000 whether opened via `http://localhost:5000`, VS Code Live Server (`http://127.0.0.1:5500`), or `file://`.
-  - Visiting `http://localhost:5000/` automatically serves the Noteversity web application.
+  - Visiting `http://localhost:5000/` automatically serves the AKGEC web application.
 
 ---
 
@@ -267,7 +267,7 @@ sequenceDiagram
     Server-->>Browser: Returns noteversity-prototype.html
 
     Browser->>Server: POST /api/auth/demo-session
-    Server->>DB: Find or create "Parul Admin"
+    Server->>DB: Find or create "Ayush Rai"
     Server-->>Browser: Returns JWT token + user profile
 
     par Initial Data Loading
@@ -321,7 +321,7 @@ Every layer has been verified using automated commands:
 2. **Authentication & JWT Token:**
    ```powershell
    Invoke-RestMethod -Uri "http://localhost:5000/api/auth/demo-session" -Method Post
-   # Output: { "token": "...", "user": { "name": "Parul Admin", ... } }
+   # Output: { "token": "...", "user": { "name": "Ayush Rai", ... } }
    ```
 3. **Database Population:**
    - 63 Notes seeded from the catalog and retrievable via `GET /api/notes`.

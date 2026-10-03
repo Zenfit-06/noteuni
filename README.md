@@ -1,6 +1,6 @@
-# 📘 Noteversity — Parul University Academic Notes, PYQ & AI Assistant Platform
+# 📘 AKGEC — Ajay Kumar Garg Engineering College | Academic Notes, PYQ & AI Assistant Platform
 
-**Noteversity** is a full-stack, university-tailored academic portal built for engineering students at **Parul University**. It provides a centralized repository for semester lecture notes, previous year question papers (PYQs), and an **AI-powered Academic Mentor** that reads course notes and exam papers directly to answer student doubts and exam queries.
+**AKGEC** is a full-stack, college-tailored academic portal built for engineering students at **Ajay Kumar Garg Engineering College (AKGEC)**. It provides a centralized repository for semester lecture notes, previous year question papers (PYQs), and an **AI-powered Academic Mentor** that reads course notes and exam papers directly to answer student doubts and exam queries.
 
 ---
 
@@ -20,7 +20,7 @@ The batch script will automatically:
 1. Check if Node.js is installed.
 2. Install required backend npm dependencies if missing (`npm install`).
 3. Automatically free port `5000` if previously occupied.
-4. Launch the Noteversity backend server.
+4. Launch the AKGEC backend server.
 5. Restore database collections from persistent JSON files.
 6. Open **http://localhost:5000** automatically in your default browser.
 
@@ -42,7 +42,7 @@ The batch script will automatically:
    Verify or edit `noteversity-backend/.env`:
    ```env
    PORT=5000
-   ALLOWED_EMAIL_DOMAIN=paruluniversity.ac.in
+   ALLOWED_EMAIL_DOMAIN=akgec.ac.in
    JWT_SECRET=noteversity_super_secret_jwt_key_2026
    JWT_EXPIRES_IN=7d
    GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
@@ -164,7 +164,7 @@ flowchart TD
 1. **Relevance-Ranked Retrieval**: When a student asks a question in a subject (e.g. *DAA*, *AI*, *AWS*, *EPJ*, *TOC*, *QR*), the backend scores every notes/PYQ PDF by IDF-weighted keyword overlap with the question (and a bonus for rare, distinctive terms), so the chapters that actually teach the queried topic are selected — not just the most-downloaded files. Questions asked under *General* search across all six subjects.
 2. **Targeted Excerpts & In-Memory Caching**: `pdf-parse` extracts full PDF text (cached in memory with timestamp validation). Instead of only the first pages, the AI reads the highest-scoring ~4,000-character chunks from anywhere in each book (up to 24k chars per document, 100k total) — so a 1.2-million-character reference book still contributes exactly its pumping-lemma section. Scanned/image-only PDFs (no text layer) are reported honestly to the model instead of being cited as sources.
 3. **Instant Intent Filter**: Quick greetings (*"hey"*, *"hi"*, *"thanks"*, *"what can you do?"*) are answered instantly without consuming AI tokens.
-4. **Academic Guardrails**: If an off-topic question is asked (e.g., movies, sports, entertainment), the assistant politely declines and redirects the student to Parul University coursework.
+4. **Academic Guardrails**: If an off-topic question is asked (e.g., movies, sports, entertainment), the assistant politely declines and redirects the student to AKGEC coursework.
 5. **Faculty Answer Format**: Every answer follows a two-part structure — first a ready-to-write **"✍️ How to Write This in Your Exam"** section (definitions, formulas, steps, tables, complexity — copy-ready for the answer sheet), then a deeper **"📚 Faculty Explanation"** (intuition, worked example, common mistakes). Markdown tables and LaTeX render natively in the chat.
 6. **Gemini Fallback Pipeline**: Formulates a structured university exam prompt and queries Google Gemini using a multi-model fallback chain (`gemini-3.1-flash-lite` → `gemini-flash-latest` → `gemini-3.8-flash` → `gemini-3.7-flash`).
 7. **Mathematical KaTeX Rendering**: Mathematical equations, recurrence relations, and algorithm complexity bounds ($O(N \log N)$) are rendered cleanly on the client using KaTeX.
@@ -178,7 +178,7 @@ The single-page frontend is a modern, zero-framework SPA with the following feat
 | Feature | Description |
 |---------|-------------|
 | **Password show/hide** | Eye-toggle on login and both signup password fields. |
-| **Favicon & per-view titles** | SVG "N" favicon; browser tab title updates per view (*Notes Library — Noteversity*, *ChatBot — Noteversity*, etc.). |
+| **Favicon & per-view titles** | SVG "N" favicon; browser tab title updates per view (*Notes Library — AKGEC*, *ChatBot — AKGEC*, etc.). |
 | **Loading skeletons** | Shimmer placeholder cards render instantly while notes/PYQs fetch, then swap seamlessly for real data. |
 | **Inline PDF preview** | 👁 "Preview" button on every note/PYQ card opens a modal iframe — no download needed to peek. |
 | **Drag-and-drop upload + progress** | Admin upload modal has a drag-and-drop zone; XHR upload shows a real-time % progress bar. |
@@ -213,7 +213,7 @@ note/
     │
     ├── middleware/
     │   ├── auth.js                   # JWT authentication and user payload extraction
-    │   ├── admin.js                  # Admin role authorization guard (Parul Admin)
+    │   ├── admin.js                  # Admin role authorization guard (Ayush Rai)
     │   └── upload.js                 # Multer storage configuration for PDF files
     │
     ├── models/
@@ -272,7 +272,7 @@ note/
    - Allow registered students to upload notes with a *"Pending Admin Review"* state. Admins can preview, approve, or reject submissions before they go live.
 
 4. **AI Exam Mock Generator & Flashcards**:
-   - Interactive quiz mode where Noteversity AI automatically generates 5-question mock tests and formula flashcards based on recent AKTU semester PYQs.
+   - Interactive quiz mode where AKGEC AI automatically generates 5-question mock tests and formula flashcards based on recent AKTU semester PYQs.
 
 5. **Offline Progressive Web App (PWA)**:
    - Service Worker implementation allowing students to save notes and view PDFs offline on mobile devices without active internet connection.
@@ -283,4 +283,4 @@ note/
 ---
 
 ## 📄 License & Credits
-Developed for Parul University engineering students. Designed for fast academic study, easy resource sharing, and exam preparation.
+Developed for AKGEC engineering students. Designed for fast academic study, easy resource sharing, and exam preparation.

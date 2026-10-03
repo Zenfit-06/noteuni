@@ -21,7 +21,7 @@ const router = express.Router();
 
 const GUEST_COOKIE = 'nv_session';
 const ADMIN_COOKIE = 'nv_admin';
-const ADMIN_EMAIL = 'admin@paruluniversity.ac.in';
+const ADMIN_EMAIL = 'admin@akgec.ac.in';
 
 // Simple in-memory rate limiter (per warm serverless instance; each instance
 // also enforces it, and bcrypt cost throttles guessing regardless).
@@ -78,7 +78,7 @@ router.post('/guest-session', async (req, res) => {
     }
     const user = await User.create({
       name: 'Guest',
-      email: `guest-${suffix}@${process.env.ALLOWED_EMAIL_DOMAIN || 'paruluniversity.ac.in'}`,
+      email: `guest-${suffix}@${process.env.ALLOWED_EMAIL_DOMAIN || 'akgec.ac.in'}`,
       branch: 'CSE',
       semester: 5,
       isVerified: true,
@@ -160,7 +160,7 @@ router.post('/admin/login', async (req, res) => {
     let admin = await User.findOne({ email: ADMIN_EMAIL });
     if (!admin) {
       admin = await User.create({
-        name: 'Parul Admin',
+        name: 'Ayush Rai',
         email: ADMIN_EMAIL,
         rollNumber: '2113101',
         branch: 'Computer Science & Engineering',

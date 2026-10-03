@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
   http.createServer(app).listen(PORT, () => {
-    console.log(`Noteversity server running on port ${PORT}`);
+    console.log(`AKGEC server running on port ${PORT}`);
   });
 }).catch((err) => {
   console.error('Startup failed:', err.message);

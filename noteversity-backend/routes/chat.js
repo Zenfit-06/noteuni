@@ -26,7 +26,7 @@ router.delete('/history', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/chat/ask — Ask Noteversity AI assistant (reads relevant notes via
+// POST /api/chat/ask — Ask AKGEC AI assistant (reads relevant notes via
 // extracted text + generates answer + persists in the user's chat history)
 router.post('/ask', requireAuth, async (req, res) => {
   let clientAborted = false;
@@ -75,7 +75,7 @@ router.post('/ask', requireAuth, async (req, res) => {
 
     // 3. Record AI message in chat history
     await appendUserChat(req.userId, {
-      who: 'Noteversity AI',
+      who: 'AKGEC AI',
       text: result.reply,
       sources: result.sources || [],
       me: false,

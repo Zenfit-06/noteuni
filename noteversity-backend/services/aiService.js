@@ -67,7 +67,7 @@ function checkCasualIntent(rawQuestion, normSub) {
 
   const identity = ['who are you', 'what is this', 'what can you do', 'help', 'about'];
   if (identity.includes(q)) {
-    return `I am Noteversity AI — your academic tutor for Parul University engineering courses. I read your uploaded course notes and PYQs to help you study topics, explain algorithms, and prepare for university exams in **${subLabel}**.`;
+    return `I am AKGEC AI — your academic tutor for AKGEC engineering courses. I read your uploaded course notes and PYQs to help you study topics, explain algorithms, and prepare for university exams in **${subLabel}**.`;
   }
 
   const thanks = ['thanks', 'thank you', 'tysm', 'thx', 'thank u', 'appreciate it'];
@@ -270,7 +270,7 @@ async function generateWithXAI(prompt) {
           messages: [
             {
               role: 'system',
-              content: 'You are Noteversity AI — the dedicated academic mentor and tutor for Parul University engineering students. Jump directly into explaining engineering topics and answering academic questions with high clarity, clean math, and pseudocode where appropriate. Do not include casual greetings or non-academic filler.',
+              content: 'You are AKGEC AI — the dedicated academic mentor and tutor for AKGEC engineering students. Jump directly into explaining engineering topics and answering academic questions with high clarity, clean math, and pseudocode where appropriate. Do not include casual greetings or non-academic filler.',
             },
             {
               role: 'user',
@@ -445,7 +445,7 @@ The current question may reference this conversation (e.g. "explain that more si
 `
     : '';
 
-  const prompt = `You are Noteversity AI — the dedicated academic mentor and tutor for Parul University engineering students.
+  const prompt = `You are AKGEC AI — the dedicated academic mentor and tutor for AKGEC engineering students.
 
 STUDENT'S SUBJECT FOCUS: ${normSub === 'All' ? 'General Computer Science & Engineering' : normSub}
 ${conversationBlock}STUDENT'S QUESTION: ${question}
@@ -456,10 +456,10 @@ ${detailed ? '' : 'QUICK MODE ACTIVE: The student wants a SHORT answer. Give onl
 
 STRICT GUARDRAILS & RESPONSE RULES:
 1. STRICT ACADEMIC & SUBJECT FOCUS (NO OFF-TOPIC):
-   - You are strictly an academic engineering assistant for Parul University students.
+   - You are strictly an academic engineering assistant for AKGEC students.
    - If the student asks about anything UNRELATED to engineering, computer science, university curriculum, or exam preparation (e.g. movies, celebrity gossip, sports, politics, games, jokes, cooking recipes, creative non-academic roleplay):
      DECLINE POLITELY WITH THIS EXACT TYPE OF REDIRECTION:
-     "I am specialized strictly for Parul University academic engineering subjects and exam preparation (${normSub}). Please ask a question related to your syllabus, coursework notes, or university exam preparation."
+     "I am specialized strictly for AKGEC academic engineering subjects and exam preparation (${normSub}). Please ask a question related to your syllabus, coursework notes, or university exam preparation."
    - Never generate essays or answers for non-academic topics.
 
 2. ANSWER LIKE A FACULTY MEMBER — PICK THE RIGHT FORMAT FOR THE QUESTION:
@@ -476,7 +476,7 @@ STRICT GUARDRAILS & RESPONSE RULES:
       - SKIP the two-part structure entirely. Answer directly and concisely with a clean bullet/numbered list or a short factual answer, grounded in the excerpts.
       - If the question asks what a unit/document covers, LIST the actual topics found in the provided excerpts — do not invent topics and do not lecture about one of them.
    C) QUICK MODE (when instructed below): answer in the shortest useful form — essentials only, no headings, no two-part structure, max ~150 words.
-   - NEVER start with self-introductions ("Hello! I am Noteversity...", "Welcome back!"). End cleanly with no filler goodbyes.
+   - NEVER start with self-introductions ("Hello! I am AKGEC...", "Welcome back!"). End cleanly with no filler goodbyes.
 
 3. CLEAN TABLES, MATH & CODE FORMATTING:
    - For tabular data (DP tables, comparison tables, truth tables), use GitHub-style markdown tables with a header row and a |---|---| separator row. Keep tables to 6 columns or fewer and keep cell text short.
@@ -541,7 +541,7 @@ STRICT GUARDRAILS & RESPONSE RULES:
  * failure returns [] so the UI simply shows no chips.
  */
 async function suggestFollowUps({ question, answer, subject = 'All' }) {
-  const prompt = `You are Noteversity AI, an academic tutor for engineering students.
+  const prompt = `You are AKGEC AI, an academic tutor for engineering students.
 The student just asked: "${String(question).slice(0, 400)}"
 Subject focus: ${normalizeSubject(subject)}
 Your answer was: "${String(answer).slice(0, 1500)}"

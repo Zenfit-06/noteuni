@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../config/env');
 
-const ADMIN_EMAIL = 'admin@paruluniversity.ac.in';
+const ADMIN_EMAIL = 'admin@akgec.ac.in';
 
 /**
  * Server-side gate for every admin operation. Verifies the signed nv_admin

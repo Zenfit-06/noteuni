@@ -105,11 +105,11 @@ async function seedInitialData() {
     } else {
       // System admin record (upload attribution only — admin auth is a
       // password-hash env var, never a user-account password)
-      let demoUser = await User.findOne({ email: 'admin@paruluniversity.ac.in' });
+      let demoUser = await User.findOne({ email: 'admin@akgec.ac.in' });
       if (!demoUser) {
         demoUser = await User.create({
-          name: 'Parul Admin',
-          email: 'admin@paruluniversity.ac.in',
+          name: 'Ayush Rai',
+          email: 'admin@akgec.ac.in',
           rollNumber: '2113101',
           branch: 'Computer Science & Engineering',
           semester: 5,
@@ -118,11 +118,11 @@ async function seedInitialData() {
         console.log('✓ System admin record seeded');
       }
 
-      let peerUser = await User.findOne({ email: 'karan@paruluniversity.ac.in' });
+      let peerUser = await User.findOne({ email: 'karan@akgec.ac.in' });
       if (!peerUser) {
         peerUser = await User.create({
           name: 'Karan M.',
-          email: 'karan@paruluniversity.ac.in',
+          email: 'karan@akgec.ac.in',
           rollNumber: '2113102',
           branch: 'CSE',
           semester: 5,
@@ -130,11 +130,11 @@ async function seedInitialData() {
         });
       }
 
-      let facultyUser = await User.findOne({ email: 'faculty@paruluniversity.ac.in' });
+      let facultyUser = await User.findOne({ email: 'faculty@akgec.ac.in' });
       if (!facultyUser) {
         facultyUser = await User.create({
           name: 'Faculty Notes',
-          email: 'faculty@paruluniversity.ac.in',
+          email: 'faculty@akgec.ac.in',
           branch: 'CSE',
           semester: 5,
           isVerified: true,
@@ -144,8 +144,8 @@ async function seedInitialData() {
       await syncUsersToJson(User);
     }
 
-    const demoUser = await User.findOne({ email: 'admin@paruluniversity.ac.in' });
-    const facultyUser = (await User.findOne({ email: 'faculty@paruluniversity.ac.in' })) || demoUser;
+    const demoUser = await User.findOne({ email: 'admin@akgec.ac.in' });
+    const facultyUser = (await User.findOne({ email: 'faculty@akgec.ac.in' })) || demoUser;
 
     // ── 2. NOTES: Restore from notes.json (dev) or seed the course library ──
     const existingNotesInJson = readJson(NOTES_FILE, []);

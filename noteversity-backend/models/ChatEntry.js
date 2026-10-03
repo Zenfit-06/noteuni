@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const chatEntrySchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    who: { type: String, required: true }, // 'You' | 'Noteversity AI'
+    who: { type: String, required: true }, // 'You' | 'AKGEC AI'
     text: { type: String, default: '' },
     sources: { type: Array, default: [] },
     me: { type: Boolean, default: false },

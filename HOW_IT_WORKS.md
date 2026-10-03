@@ -1,6 +1,6 @@
-# 🧠 HOW IT WORKS — Noteversity Logic & Architecture Guide
+# 🧠 HOW IT WORKS — AKGEC Logic & Architecture Guide
 
-This document explains **how every piece of Noteversity actually works** — the login/auth logic, the ChatBox RAG pipeline, where data is stored, and what every file does. Read this before touching the code.
+This document explains **how every piece of AKGEC actually works** — the login/auth logic, the ChatBox RAG pipeline, where data is stored, and what every file does. Read this before touching the code.
 
 ---
 
@@ -38,11 +38,11 @@ flowchart TD
 | `noteversity-prototype.html` | Login/signup UI, stores token in `localStorage`, attaches `Authorization: Bearer <token>` to every API call |
 | `noteversity-backend/routes/auth.js` | `POST /api/auth/signup`, `/login`, `/request-otp`, `/verify-otp`, `/demo-session` |
 | `noteversity-backend/middleware/auth.js` | Verifies the JWT on every protected request, extracts `userId` |
-| `noteversity-backend/middleware/admin.js` | Upload/delete guard — compares user email against `ADMIN_EMAIL` (`admin@paruluniversity.ac.in`) |
+| `noteversity-backend/middleware/admin.js` | Upload/delete guard — compares user email against `ADMIN_EMAIL` (`admin@akgec.ac.in`) |
 | `noteversity-backend/models/User.js` | User schema (name, email, passwordHash, rollNumber, branch, semester, downloadedNotes/Pyqs) |
 
 ### Signup flow (`POST /api/auth/signup`)
-1. Frontend validates: name present, email ends with `@paruluniversity.ac.in` (domain comes from `ALLOWED_EMAIL_DOMAIN` in `.env`), password ≥ 6 chars, passwords match. Errors show in a red alert that auto-scrolls into view.
+1. Frontend validates: name present, email ends with `@akgec.ac.in` (domain comes from `ALLOWED_EMAIL_DOMAIN` in `.env`), password ≥ 6 chars, passwords match. Errors show in a red alert that auto-scrolls into view.
 2. Backend re-validates the same rules, hashes the password with **bcryptjs** (10 salt rounds), creates the user, returns a **JWT** (signed with `JWT_SECRET`, expires per `JWT_EXPIRES_IN`, default 7d) plus the user profile.
 3. Frontend saves token + user into `localStorage` (`noteversity_token`, `noteversity_user`) and enters the app.
 

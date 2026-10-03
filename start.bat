@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title Noteversity - Parul University Academic Platform
+title AKGEC - Academic Platform
 
 echo ==========================================
-echo        NOTEVERSITY - PARUL UNIVERSITY PORTAL
+echo        AKGEC - ACADEMIC NOTES PORTAL
 echo ==========================================
 echo.
 
@@ -73,9 +73,9 @@ echo Opening http://localhost:5000 in your browser...
 start "" cmd /c "ping 127.0.0.1 -n 3 >nul && start http://localhost:5000"
 
 REM 8. Start the server directly in this window
-echo Starting Noteversity Server...
+echo Starting AKGEC Server...
 echo ==========================================
-echo Keep this window open while using Noteversity.
+echo Keep this window open while using AKGEC.
 echo Press Ctrl + C to stop the server anytime.
 echo ==========================================
 echo.

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noteversity — Parul University</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A4D68'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-size='38' font-weight='bold' fill='%23088395' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
+<title>AKGEC — Ajay Kumar Garg Engineering College</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A4D68'/%3E%3Ctext x='32' y='45' font-family='Arial,sans-serif' font-size='38' font-weight='bold' fill='%23088395' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
@@ -541,7 +541,7 @@
 <!-- ============ BOOT ERROR (shown only when the server is unreachable) ============ -->
 <div id="boot-error" style="display:none; position:fixed; inset:0; background:var(--paper); z-index:9999; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:24px;">
   <div style="font-size:34px;">📡</div>
-  <div style="font-weight:700; color:var(--head); font-size:16px;">Cannot reach the Noteversity server</div>
+  <div style="font-weight:700; color:var(--head); font-size:16px;">Cannot reach the AKGEC server</div>
   <div style="font-size:13px; color:var(--text-soft); max-width:360px; line-height:1.5;">
     Make sure the backend is running (<code>start.bat</code> or <code>npm start</code> inside <code>noteversity-backend</code>), then retry.
   </div>
@@ -554,7 +554,7 @@
   <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="glyph">N</div>
-      <div class="name disp">NOTEVERSITY</div>
+      <div class="name disp">AKGEC</div>
     </div>
     <nav class="nav-tabs">
       <div class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')"><span class="ic">▤</span> Dashboard</div>
@@ -566,8 +566,8 @@
     <div class="sidebar-user" style="cursor:pointer;" onclick="switchView('profile')" title="View profile">
       <div class="avatar" id="sidebarAvatar">AR</div>
       <div>
-        <div class="u-name" id="sidebarName">Parul Admin</div>
-        <div class="u-sub" id="sidebarSub">CSE · Sem 5 · Parul University</div>
+        <div class="u-name" id="sidebarName">Ayush Rai</div>
+        <div class="u-sub" id="sidebarSub">CSE · Sem 5 · AKGEC</div>
       </div>
     </div>
     <div style="padding: 6px 16px 14px;">
@@ -683,11 +683,11 @@
         <div class="profile-top">
           <div class="avatar" id="profileAvatar">AR</div>
           <div>
-            <div class="p-name" id="profileName">Parul Admin</div>
+            <div class="p-name" id="profileName">Ayush Rai</div>
             <div class="p-role" id="profileRole">B.Tech CSE · Semester 5 · Roll No. 2113101</div>
           </div>
         </div>
-        <div class="p-row"><span class="k">College email</span><span class="v" id="profileEmail">admin@paruluniversity.ac.in</span></div>
+        <div class="p-row"><span class="k">College email</span><span class="v" id="profileEmail">admin@akgec.ac.in</span></div>
         <div class="p-row"><span class="k">Branch</span><span class="v" id="profileBranch">Computer Science &amp; Engineering</span></div>
         <div class="p-row" id="profileBatchRow"><span class="k">Batch</span><span class="v" id="profileBatch">—</span></div>
         <div class="p-row"><span class="k">Items contributed</span><span class="v" id="profileContrib">0</span></div>
@@ -822,7 +822,7 @@ function switchView(name){
   document.getElementById('view-'+name).classList.add('active');
   const titles = {dashboard:"Dashboard", notes:"Notes Library", pyqs:"PYQ Bank", chat:"ChatBot", profile:"Profile"};
   document.getElementById('topbarTitle').textContent = titles[name];
-  document.title = titles[name] + ' — Noteversity';
+  document.title = titles[name] + ' — AKGEC';
   if(name === 'notes') { if(notes && notes.length) renderNotes(); fetchNotes(); }
   if(name === 'pyqs') { if(pyqs && pyqs.length) renderPyqs(); fetchPyqs(); }
   if(name === 'dashboard') renderDashboard();
@@ -1065,7 +1065,7 @@ async function downloadItem(id, title, type = 'note'){
 /* ---------------- DELETE (ADMIN ONLY) ---------------- */
 async function deleteItem(id, title, type = 'note'){
   if(!isAdmin()){
-    showToast("Access Denied: Only Admin (Parul Admin) can delete files");
+    showToast("Access Denied: Only Admin (Ayush Rai) can delete files");
     return;
   }
   if(!confirm(`Are you sure you want to permanently delete "${title}"?`)) return;
@@ -1221,7 +1221,7 @@ function renderMsgs(){
 
   if (botChatData.length === 0 && !isChatBotTyping) {
     wrap.innerHTML = '<div class="starter-wrap">' +
-      '<div class="starter-title">🤖 Noteversity Academic Assistant</div>' +
+      '<div class="starter-title">🤖 AKGEC Academic Assistant</div>' +
       '<div class="starter-desc">I read your subject handwritten notes and past exam papers (PYQs) directly from the repository to answer your exam questions and doubt clarifications.</div>' +
       '<div style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-faint); margin-bottom:8px;">Try asking:</div>' +
       '<div class="starter-prompts">' +
@@ -1260,7 +1260,7 @@ function renderMsgs(){
         (isMe ? 'You' : 'AI') +
       '</div>' +
       '<div style="flex:1; min-width:0;">' +
-        '<div class="who">' + (isMe ? 'You' : (m.who || 'Noteversity AI')) + '</div>' +
+        '<div class="who">' + (isMe ? 'You' : (m.who || 'AKGEC AI')) + '</div>' +
         '<div class="bubble" style="' + (isMe ? '' : 'color:var(--text); border:1px solid var(--rule);') + '">' +
           bodyContent +
           sourcesHtml +
@@ -1277,7 +1277,7 @@ function renderMsgs(){
     html += '<div class="msg">' +
       '<div class="avatar" style="background:var(--amber); color:#fff; font-weight:700;">AI</div>' +
       '<div>' +
-        '<div class="who">Noteversity AI</div>' +
+        '<div class="who">AKGEC AI</div>' +
         '<div class="chat-typing">' +
           '<span class="typing-dot"></span>' +
           '<span class="typing-dot"></span>' +
@@ -1339,7 +1339,7 @@ function stopMsg() {
       currentChatAbortController = null;
     }
     botChatData.push({
-      who: "Noteversity AI",
+      who: "AKGEC AI",
       text: "⏹️ *Response stopped by user.*",
       me: false,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -1410,7 +1410,7 @@ async function sendMsg(prefill) {
 
     if (res.ok && data.reply) {
       botChatData.push({
-        who: "Noteversity AI",
+        who: "AKGEC AI",
         text: data.reply,
         sources: data.sources || [],
         me: false,
@@ -1420,7 +1420,7 @@ async function sendMsg(prefill) {
       loadFollowupChips(val, data.reply, subj);
     } else {
       botChatData.push({
-        who: "Noteversity AI",
+        who: "AKGEC AI",
         text: data.message || "I encountered an error trying to process your question. Please ensure the backend server has a valid AI API key configured.",
         me: false,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -1433,7 +1433,7 @@ async function sendMsg(prefill) {
     }
     console.error('Chat error:', err);
     botChatData.push({
-      who: "Noteversity AI",
+      who: "AKGEC AI",
       text: "Connection failed. Please check if the backend server is running on port 5000.",
       me: false,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -1487,7 +1487,7 @@ function closePreview(){
 
 function openUpload(kind){
   if(!isAdmin()){
-    showToast("Access Denied: Only Admin (Parul Admin) can upload files");
+    showToast("Access Denied: Only Admin (Ayush Rai) can upload files");
     return;
   }
   uploadKind = kind;
@@ -1567,7 +1567,7 @@ function uploadWithProgress(formData, endpoint){
 
 async function submitUpload(){
   if(!isAdmin()){
-    showToast("Access Denied: Only Admin (Parul Admin) can upload files");
+    showToast("Access Denied: Only Admin (Ayush Rai) can upload files");
     return;
   }
   const title = document.getElementById('upTitle').value.trim() || 'Untitled upload';
@@ -1758,7 +1758,7 @@ async function bootIntoApp() {
 }
 
 function isAdmin() {
-  return !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@paruluniversity.ac.in');
+  return !!(currentUser && currentUser.email && currentUser.email.toLowerCase() === 'admin@akgec.ac.in');
 }
 
 /* Real stat helpers: items the user uploaded + questions asked to the AI */

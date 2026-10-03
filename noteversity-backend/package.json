@@ -1,7 +1,7 @@
 {
-  "name": "noteversity-backend",
+  "name": "akgec-backend",
   "version": "1.0.0",
-  "description": "Backend for Noteversity — Parul University notes & PYQ platform with guest sessions, admin auth, uploads, and AI chat",
+  "description": "Backend for the AKGEC (Ajay Kumar Garg Engineering College) notes & PYQ platform with guest sessions, admin auth, uploads, and AI chat",
   "main": "server.js",
   "engines": {
     "node": ">=18"
