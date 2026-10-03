@@ -15,20 +15,32 @@ const connectDB = require('../noteversity-backend/config/db');
 const mongoose = require('mongoose');
 
 // Serverless hardening: Vercel freezes lambdas between requests and their
-// sockets to Atlas die while frozen. On every request, make sure the
-// connection is genuinely alive (readyState 1 = connected) and re-connect
-// when it isn't — never serve DB-backed routes from a dead connection.
+// sockets to Atlas die while frozen. readyState alone can lie (it says
+// "connected" while ops buffer on a dead socket), so verify with a real
+// ping and force a full reconnect when it fails.
 let connecting = null;
 
+async function reconnectDb() {
+  try { await mongoose.disconnect(); } catch (e) { /* already down */ }
+  if (!connecting) {
+    connecting = connectDB().finally(() => { connecting = null; });
+  }
+  await connecting;
+}
+
 async function ensureDb() {
-  const state = mongoose.connection.readyState;
-  if (state === 1) return;
-  if (state === 2 && connecting) {
-    await connecting;
+  if (mongoose.connection.readyState !== 1) {
+    await reconnectDb();
     return;
   }
-  connecting = connectDB().finally(() => { connecting = null; });
-  await connecting;
+  try {
+    await Promise.race([
+      mongoose.connection.db.admin().command({ ping: 1 }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('ping timeout')), 4000)),
+    ]);
+  } catch (err) {
+    await reconnectDb();
+  }
 }
 
 module.exports = async (req, res) => {

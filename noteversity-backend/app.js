@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const cookieParser = require('cookie-parser');
+const mongoose = require('mongoose');
 
 const requireAuth = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
@@ -67,6 +68,34 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// TEMPORARY deployment diagnostic — reports the live DB connection state.
+app.get('/api/debug-db', async (req, res) => {
+  const t0 = Date.now();
+  const state = mongoose.connection.readyState;
+  let ping = 'skipped (not connected)';
+  let pingMs = Date.now() - t0;
+  try {
+    if (state === 1 && mongoose.connection.db) {
+      await mongoose.connection.db.admin().command({ ping: 1 });
+      ping = 'ok';
+      pingMs = Date.now() - t0;
+    }
+  } catch (err) {
+    ping = 'failed: ' + String(err.message || err).slice(0, 100);
+    pingMs = Date.now() - t0;
+  }
+  const uri = process.env.MONGO_URI || '(MONGO_URI NOT SET)';
+  res.json({
+    marker: 'dbg-v2',
+    readyState: state,
+    ping,
+    pingMs,
+    mongoUriMasked: uri.replace(/\/\/([^:@/]+):[^@/]+@/, '//$1:***@'),
+    nodeEnv: process.env.NODE_ENV || null,
+    onVercel: !!process.env.VERCEL,
+  });
+});
 
 // ---- Central error handler: multer problems → clean JSON 400, everything
 // else → generic JSON 500 with the stack logged server-side only ----
