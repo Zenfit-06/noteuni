@@ -66,7 +66,7 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, r
     res.status(201).json(pyq);
   } catch (err) {
     console.error('PYQ upload error');
-    res.status(500).json({ message: 'Upload failed' });
+    res.status(500).json({ message: 'Upload failed: ' + String(err.message || err).slice(0, 140) });
   }
 });
 
