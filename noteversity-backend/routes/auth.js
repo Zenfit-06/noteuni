@@ -12,6 +12,7 @@ const express = require('express');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const { syncUsersToJson } = require('../services/jsonStore');
 const { jwtSecret, IS_PROD, GUEST_SESSION_TTL, ADMIN_SESSION_TTL, GUEST_COOKIE_MAX_AGE, ADMIN_COOKIE_MAX_AGE } = require('../config/env');
