@@ -12,18 +12,31 @@ globalThis.Path2D = globalThis.Path2D || class Path2D {};
 
 const app = require('../noteversity-backend/app');
 const connectDB = require('../noteversity-backend/config/db');
+const mongoose = require('mongoose');
 
-let readyPromise = null;
+// Serverless hardening: Vercel freezes lambdas between requests and their
+// sockets to Atlas die while frozen. On every request, make sure the
+// connection is genuinely alive (readyState 1 = connected) and re-connect
+// when it isn't — never serve DB-backed routes from a dead connection.
+let connecting = null;
+
+async function ensureDb() {
+  const state = mongoose.connection.readyState;
+  if (state === 1) return;
+  if (state === 2 && connecting) {
+    await connecting;
+    return;
+  }
+  connecting = connectDB().finally(() => { connecting = null; });
+  await connecting;
+}
 
 module.exports = async (req, res) => {
   try {
-    if (!readyPromise) {
-      readyPromise = connectDB();
-    }
-    await readyPromise;
+    await ensureDb();
     return app(req, res);
   } catch (err) {
-    console.error('[Boot failure]');
+    console.error('[Boot/connection failure]');
     res.statusCode = 500;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ message: 'Server boot failed. Check environment variables and database.' }));

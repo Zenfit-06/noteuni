@@ -18,6 +18,8 @@ async function connectDB() {
     console.log(`Connecting to MongoDB at ${maskedUri(mongoUri)}...`);
     await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: IS_PROD ? 10000 : 2500,
+      bufferTimeoutMS: 20000,
+      maxPoolSize: 10,
     });
     console.log('MongoDB connected successfully');
     await seedInitialData();
