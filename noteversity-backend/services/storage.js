@@ -15,16 +15,12 @@ const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
 const USE_GRIDFS = IS_PROD || process.env.STORAGE_MODE === 'gridfs';
 const MAX_EXTRACTED_TEXT = 120000; // ~120KB per document — far above RAG's 24KB/doc budget
 
-let bucketPromise = null;
-
 function gridfsBucket() {
-  if (!bucketPromise) {
-    const { GridFSBucket } = require('mongodb');
-    bucketPromise = Promise.resolve(
-      new GridFSBucket(mongoose.connection.db, { bucketName: 'pdfs' })
-    );
+  if (!mongoose.connection || !mongoose.connection.db) {
+    throw new Error('Database connection is not ready for GridFS');
   }
-  return bucketPromise;
+  const { GridFSBucket } = require('mongodb');
+  return new GridFSBucket(mongoose.connection.db, { bucketName: 'pdfs' });
 }
 
 function safeName(filename) {
