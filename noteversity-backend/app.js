@@ -69,32 +69,30 @@ app.use('/api/chat', chatRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// TEMPORARY deployment diagnostic — reports the live DB connection state.
+// TEMPORARY deployment diagnostic — attempts a live connect and reports the exact result.
 app.get('/api/debug-db', async (req, res) => {
-  const t0 = Date.now();
-  const state = mongoose.connection.readyState;
-  let ping = 'skipped (not connected)';
-  let pingMs = Date.now() - t0;
-  try {
-    if (state === 1 && mongoose.connection.db) {
-      await mongoose.connection.db.admin().command({ ping: 1 });
-      ping = 'ok';
-      pingMs = Date.now() - t0;
-    }
-  } catch (err) {
-    ping = 'failed: ' + String(err.message || err).slice(0, 100);
-    pingMs = Date.now() - t0;
-  }
-  const uri = process.env.MONGO_URI || '(MONGO_URI NOT SET)';
-  res.json({
-    marker: 'dbg-v2',
-    readyState: state,
-    ping,
-    pingMs,
-    mongoUriMasked: uri.replace(/\/\/([^:@/]+):[^@/]+@/, '//$1:***@'),
+  const out = {
+    marker: 'dbg-v3',
+    readyStateBefore: mongoose.connection.readyState,
+    mongoUriMasked: (process.env.MONGO_URI || '(MONGO_URI NOT SET)').replace(/\/\/([^:@/]+):[^@/]+@/, '//$1:***@'),
     nodeEnv: process.env.NODE_ENV || null,
     onVercel: !!process.env.VERCEL,
-  });
+  };
+  const t0 = Date.now();
+  try {
+    await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 10000 });
+    out.connect = 'ok';
+    out.readyStateAfterConnect = mongoose.connection.readyState;
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    out.ping = 'ok';
+    out.userCount = await mongoose.connection.collection('users').countDocuments({});
+    out.gridfsCount = await mongoose.connection.db.collection('pdfs.files').countDocuments({});
+  } catch (err) {
+    out.error = String(err.message || err).slice(0, 250);
+    out.readyStateAfterError = mongoose.connection.readyState;
+  }
+  out.ms = Date.now() - t0;
+  res.json(out);
 });
 
 // ---- Central error handler: multer problems → clean JSON 400, everything
