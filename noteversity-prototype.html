@@ -823,8 +823,8 @@ function switchView(name){
   const titles = {dashboard:"Dashboard", notes:"Notes Library", pyqs:"PYQ Bank", chat:"ChatBot", profile:"Profile"};
   document.getElementById('topbarTitle').textContent = titles[name];
   document.title = titles[name] + ' — Noteversity';
-  if(name === 'notes') fetchNotes();
-  if(name === 'pyqs') fetchPyqs();
+  if(name === 'notes') { if(notes && notes.length) renderNotes(); fetchNotes(); }
+  if(name === 'pyqs') { if(pyqs && pyqs.length) renderPyqs(); fetchPyqs(); }
   if(name === 'dashboard') renderDashboard();
   if(name === 'chat') loadChatHistory();
 }
@@ -913,21 +913,33 @@ function renderSkeleton(gridId, count = 8){
 }
 
 async function fetchNotes(){
-  renderSkeleton('notesGrid');
+  if (!notes || notes.length === 0) {
+    renderSkeleton('notesGrid');
+  }
   try {
     let url = `${API_BASE}/api/notes?`;
     if(notesFilter !== "All") url += `subject=${encodeURIComponent(notesFilter)}&`;
     if(notesSearch) url += `search=${encodeURIComponent(notesSearch)}&`;
     
-    const res = await fetch(url, { headers: getAuthHeaders() });
+    const res = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
     if(res.ok){
       notes = await res.json();
       renderNotes();
       updateContribStat();
       updateTotalResStat();
+    } else if (res.status === 401) {
+      await guestSessionAndEnter();
+      return fetchNotes();
+    } else {
+      if (!notes || notes.length === 0) {
+        document.getElementById('notesGrid').innerHTML = `<div class="empty"><div class="ic">⚠️</div>Could not load notes. Please refresh.</div>`;
+      }
     }
   } catch(err){
     console.error('Fetch notes error:', err);
+    if (!notes || notes.length === 0) {
+      document.getElementById('notesGrid').innerHTML = `<div class="empty"><div class="ic">⚠️</div>Could not load notes. Please refresh.</div>`;
+    }
   }
 }
 
@@ -957,21 +969,33 @@ let pyqFilter = "All", pyqSearch = "";
 function filterPyqs(c){ pyqFilter = c; fetchPyqs(); }
 
 async function fetchPyqs(){
-  renderSkeleton('pyqGrid');
+  if (!pyqs || pyqs.length === 0) {
+    renderSkeleton('pyqGrid');
+  }
   try {
     let url = `${API_BASE}/api/pyqs?`;
     if(pyqFilter !== "All") url += `subject=${encodeURIComponent(pyqFilter)}&`;
     if(pyqSearch) url += `search=${encodeURIComponent(pyqSearch)}&`;
 
-    const res = await fetch(url, { headers: getAuthHeaders() });
+    const res = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
     if(res.ok){
       pyqs = await res.json();
       renderPyqs();
       updateContribStat();
       updateTotalResStat();
+    } else if (res.status === 401) {
+      await guestSessionAndEnter();
+      return fetchPyqs();
+    } else {
+      if (!pyqs || pyqs.length === 0) {
+        document.getElementById('pyqGrid').innerHTML = `<div class="empty"><div class="ic">⚠️</div>Could not load PYQs. Please refresh.</div>`;
+      }
     }
   } catch(err){
     console.error('Fetch PYQs error:', err);
+    if (!pyqs || pyqs.length === 0) {
+      document.getElementById('pyqGrid').innerHTML = `<div class="empty"><div class="ic">⚠️</div>Could not load PYQs. Please refresh.</div>`;
+    }
   }
 }
 
