@@ -1,88 +1,56 @@
 /**
- * Vercel serverless entry point. Keeps a verified MongoDB connection across
- * frozen/thawed lambda instances, then delegates every request to Express.
+ * Vercel serverless entry point. Keeps a cached MongoDB connection across
+ * invocations, then delegates every request to Express.
  */
 
-// pdf-parse (via pdf.js) references browser globals at module load when its
-// optional @napi-rs/canvas package is absent (as on Vercel's Linux builder).
-// We only extract text, never render pages, so minimal stubs are enough.
+// Stubs for pdf-parse browser globals on headless Linux
 globalThis.DOMMatrix = globalThis.DOMMatrix || class DOMMatrix {};
 globalThis.ImageData = globalThis.ImageData || class ImageData {};
 globalThis.Path2D = globalThis.Path2D || class Path2D {};
 
-const app = require('../noteversity-backend/app');
-const connectDB = require('../noteversity-backend/config/db');
 const mongoose = require('mongoose');
 
+// Configure Mongoose BEFORE compiling models or routes
 mongoose.set('bufferCommands', false);
 mongoose.set('autoIndex', false);
 
-let connectingPromise = null;
-let lastVerified = 0;
-const VERIFY_INTERVAL_MS = 15000;
+const app = require('../noteversity-backend/app');
 
-function ping() {
-  if (mongoose.connection.readyState !== 1 || !mongoose.connection.db) {
-    return Promise.reject(new Error('not connected'));
-  }
-  return Promise.race([
-    mongoose.connection.db.admin().command({ ping: 1 }),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('ping timeout')), 3000)),
-  ]);
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/noteversity';
+
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
-async function reconnect() {
-  console.log('[DB] Reconnecting to MongoDB (resetting connection)...');
-  if (mongoose.connection.readyState !== 0) {
-    try {
-      await mongoose.disconnect();
-    } catch (e) {
-      console.warn('[DB] disconnect error during reconnect:', e.message);
-    }
-  }
-  await connectDB();
-  await ping();
-  lastVerified = Date.now();
-  console.log('[DB] Connection verified healthy');
-}
-
-/**
- * Ensure a genuinely alive DB connection. Serialized so concurrent requests
- * share one connect/verify cycle. Handles container freezes/thaws by verifying
- * responsiveness and forcing a clean disconnect/reconnect if the socket is dead.
- */
 async function ensureDb() {
-  if (connectingPromise) {
-    await connectingPromise;
-    return;
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
   }
 
-  // Fast path: already connected and verified within the interval
-  if (mongoose.connection.readyState === 1 && (Date.now() - lastVerified < VERIFY_INTERVAL_MS)) {
-    return;
+  if (!cached.promise || mongoose.connection.readyState === 0) {
+    cached.promise = mongoose.connect(MONGO_URI, {
+      bufferCommands: false,
+      autoIndex: false,
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+    }).then((m) => {
+      console.log('MongoDB connected successfully');
+      return m;
+    });
   }
-
-  connectingPromise = (async () => {
-    // If readyState claims 1, test if socket is genuinely alive (frozen lambda check)
-    if (mongoose.connection.readyState === 1) {
-      try {
-        await ping();
-        lastVerified = Date.now();
-        return;
-      } catch (err) {
-        console.warn('[DB] Stale/frozen connection detected:', err.message);
-      }
-    }
-
-    // Not connected or ping failed — perform clean reconnect
-    await reconnect();
-  })();
 
   try {
-    await connectingPromise;
-  } finally {
-    connectingPromise = null;
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    cached.conn = null;
+    console.error('MongoDB connect error:', err.message);
+    throw err;
   }
+
+  return cached.conn;
 }
 
 module.exports = async (req, res) => {

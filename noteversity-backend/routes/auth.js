@@ -71,6 +71,10 @@ router.post('/guest-session', async (req, res) => {
     }
 
     const suffix = crypto.randomBytes(4).toString('hex');
+    if (mongoose.connection.readyState !== 1) {
+      const connectDB = require('../config/db');
+      await connectDB();
+    }
     const user = await User.create({
       name: 'Guest',
       email: `guest-${suffix}@${process.env.ALLOWED_EMAIL_DOMAIN || 'paruluniversity.ac.in'}`,
@@ -148,6 +152,10 @@ router.post('/admin/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid admin credentials' });
     }
 
+    if (mongoose.connection.readyState !== 1) {
+      const connectDB = require('../config/db');
+      await connectDB();
+    }
     let admin = await User.findOne({ email: ADMIN_EMAIL });
     if (!admin) {
       admin = await User.create({

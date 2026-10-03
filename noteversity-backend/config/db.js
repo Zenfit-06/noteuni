@@ -17,23 +17,20 @@ function maskedUri(uri) {
 }
 
 async function connectDB() {
-  const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/noteversity';
-
-  // If there is an existing non-disconnected connection, close it before reconnecting.
-  // In Mongoose, calling .connect() when readyState !== 0 will NOT create a new driver connection!
-  if (mongoose.connection.readyState !== 0) {
-    try {
-      await mongoose.disconnect();
-    } catch (_) {}
+  if (mongoose.connection.readyState === 1) {
+    return mongoose;
   }
+
+  const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/noteversity';
 
   try {
     console.log(`Connecting to MongoDB at ${maskedUri(mongoUri)}...`);
     await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: IS_PROD ? 8000 : 2500,
+      serverSelectionTimeoutMS: IS_PROD ? 10000 : 2500,
       socketTimeoutMS: 45000,
       maxPoolSize: IS_PROD ? 10 : 20,
-      bufferCommands: !IS_PROD, // In production / serverless, fail fast instead of 10s buffering
+      bufferCommands: false,
+      autoIndex: false,
     });
     console.log('MongoDB connected successfully');
     // Production: connect only — data is provisioned by scripts/sync_cloud.py.
@@ -41,6 +38,7 @@ async function connectDB() {
     if (!IS_PROD) {
       await seedInitialData();
     }
+    return mongoose;
   } catch (err) {
     if (IS_PROD) {
       // Serverless has no persistent disk — the in-memory fallback cannot save us.

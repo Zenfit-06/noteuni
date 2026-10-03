@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
     downloadedNotes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Note' }],
     downloadedPyqs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Pyq' }],
   },
-  { timestamps: true }
+  { timestamps: true, bufferCommands: false, autoIndex: false }
 );
 
 module.exports = mongoose.model('User', userSchema);
