@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const { PDFParse } = require('pdf-parse');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Note = require('../models/Note');
 const Pyq = require('../models/Pyq');
@@ -10,6 +9,8 @@ const pdfTextCache = new Map();
 
 /**
  * Extract plain text from a local PDF file.
+ * pdf-parse is required lazily: it references browser globals at load time
+ * (DOMMatrix etc.) and must never be pulled in during serverless boot.
  */
 async function extractPdfText(filePath) {
   try {
@@ -20,6 +21,7 @@ async function extractPdfText(filePath) {
       return pdfTextCache.get(cacheKey);
     }
 
+    const { PDFParse } = require('pdf-parse');
     const buf = fs.readFileSync(filePath);
     const parser = new PDFParse({ data: buf });
     await parser.load();
