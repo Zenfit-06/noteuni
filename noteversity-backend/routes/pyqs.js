@@ -1,11 +1,13 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const crypto = require('crypto');
+const path = require('path');
 const Pyq = require('../models/Pyq');
 const User = require('../models/User');
-const path = require('path');
-const fs = require('fs');
 const requireAuth = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
 const upload = require('../middleware/upload');
+const storage = require('../services/storage');
 const { syncPyqsToJson, syncUsersToJson } = require('../services/jsonStore');
 
 const router = express.Router();
@@ -33,33 +35,37 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, r
     const { title, subject, branch, semester, year, examType, isSolved } = req.body;
     if (!req.file) return res.status(400).json({ message: 'File is required' });
     if (!title || !title.trim() || !VALID_SUBJECTS.includes(subject)) {
-      if (req.file.path) fs.unlink(req.file.path, () => {});
       return res.status(400).json({ message: 'Title and subject are required' });
     }
     const yearNum = Number(year);
     if (!Number.isInteger(yearNum) || yearNum < 2000 || yearNum > 2100) {
-      if (req.file.path) fs.unlink(req.file.path, () => {});
       return res.status(400).json({ message: 'A valid year is required' });
     }
 
+    const ext = (path.extname(req.file.originalname || '') || '.pdf').toLowerCase();
+    const filename = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}${ext}`;
+    const fileUrl = await storage.putPdf(req.file.buffer, filename);
+    const extractedText = req.file.mimetype === 'application/pdf'
+      ? await storage.extractPdfText(req.file.buffer)
+      : '';
+
     const pyq = await Pyq.create({
-      title,
+      title: title.trim(),
       subject,
-      branch,
-      semester,
+      branch: (branch && String(branch).trim()) || 'CSE',
+      semester: Number(semester) || 5,
       year: yearNum,
       examType,
       isSolved: isSolved === 'true',
-      fileUrl: `/uploads/${req.file.filename}`,
+      fileUrl,
+      extractedText,
       uploadedBy: req.userId,
     });
 
     await syncPyqsToJson(Pyq);
     res.status(201).json(pyq);
   } catch (err) {
-    console.error(err);
-    // Remove the just-saved file so failed creates don't leave orphans
-    if (req.file && req.file.path) fs.unlink(req.file.path, () => {});
+    console.error('PYQ upload error');
     res.status(500).json({ message: 'Upload failed' });
   }
 });
@@ -67,34 +73,39 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, r
 // DELETE /api/pyqs/:id - ADMIN ONLY
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid PYQ id' });
+    }
     const pyq = await Pyq.findById(req.params.id);
     if (!pyq) return res.status(404).json({ message: 'PYQ not found' });
 
-    if (pyq.fileUrl && !pyq.fileUrl.includes('sample-document.pdf')) {
-      const filePath = path.join(__dirname, '..', pyq.fileUrl);
-      if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); } catch (e) { console.warn('Could not unlink file:', e.message); }
-      }
-    }
-
+    if (pyq.fileUrl) await storage.deletePdf(path.basename(pyq.fileUrl));
     await Pyq.findByIdAndDelete(req.params.id);
     await syncPyqsToJson(Pyq);
     res.json({ message: 'PYQ deleted successfully', id: req.params.id });
   } catch (err) {
-    console.error('Delete error:', err);
+    console.error('PYQ delete error');
     res.status(500).json({ message: 'Failed to delete PYQ' });
   }
 });
 
 // POST /api/pyqs/:id/download
 router.post('/:id/download', requireAuth, async (req, res) => {
-  const pyq = await Pyq.findByIdAndUpdate(req.params.id, { $inc: { downloads: 1 } }, { new: true });
-  if (!pyq) return res.status(404).json({ message: 'PYQ not found' });
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid PYQ id' });
+    }
+    const pyq = await Pyq.findByIdAndUpdate(req.params.id, { $inc: { downloads: 1 } }, { new: true });
+    if (!pyq) return res.status(404).json({ message: 'PYQ not found' });
 
-  await User.findByIdAndUpdate(req.userId, { $addToSet: { downloadedPyqs: pyq._id } });
-  await syncPyqsToJson(Pyq);
-  await syncUsersToJson(User);
-  res.json({ fileUrl: pyq.fileUrl });
+    await User.findByIdAndUpdate(req.userId, { $addToSet: { downloadedPyqs: pyq._id } });
+    await syncPyqsToJson(Pyq);
+    await syncUsersToJson(User);
+    res.json({ fileUrl: pyq.fileUrl });
+  } catch (err) {
+    console.error('PYQ download error');
+    res.status(500).json({ message: 'Download tracking failed' });
+  }
 });
 
 module.exports = router;

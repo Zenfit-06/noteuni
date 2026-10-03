@@ -1,13 +1,12 @@
 const multer = require('multer');
 const path = require('path');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'uploads')),
-  filename: (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
-  },
-});
+/**
+ * Memory storage: file bytes stay in RAM and are written to the storage
+ * backend (disk in dev, GridFS in production) by the route handler after
+ * validation. Disk storage would fail on serverless ephemeral filesystems.
+ */
+const storage = multer.memoryStorage();
 
 const allowedTypes = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.jpg', '.png'];
 

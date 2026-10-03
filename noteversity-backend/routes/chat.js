@@ -1,33 +1,33 @@
 const express = require('express');
-const Message = require('../models/Message');
 const requireAuth = require('../middleware/auth');
-const { answerAcademicQuery } = require('../services/aiService');
-const { getUserChats, appendUserChat, clearUserChats } = require('../services/jsonStore');
+const { answerAcademicQuery, suggestFollowUps } = require('../services/aiService');
+const { getUserChats, appendUserChat, clearUserChats } = require('../services/chatStore');
 
 const router = express.Router();
 
-// GET /api/chat/history — Fetch authenticated user's persistent chat conversation from data/chats.json
-router.get('/history', requireAuth, (req, res) => {
+// GET /api/chat/history — authenticated user's persistent chat conversation
+router.get('/history', requireAuth, async (req, res) => {
   try {
-    const chats = getUserChats(req.userId);
+    const chats = await getUserChats(req.userId);
     res.json(chats);
   } catch (err) {
-    console.error('[Chat History Error]:', err);
+    console.error('[Chat History Error]');
     res.status(500).json({ message: 'Failed to retrieve chat history' });
   }
 });
 
 // DELETE /api/chat/history — Clear authenticated user's chat conversation
-router.delete('/history', requireAuth, (req, res) => {
+router.delete('/history', requireAuth, async (req, res) => {
   try {
-    clearUserChats(req.userId);
+    await clearUserChats(req.userId);
     res.json({ message: 'Chat history cleared' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to clear chat history' });
   }
 });
 
-// POST /api/chat/ask — Ask Noteversity AI assistant (reads relevant PDFs + generates answer + persists in chats.json)
+// POST /api/chat/ask — Ask Noteversity AI assistant (reads relevant notes via
+// extracted text + generates answer + persists in the user's chat history)
 router.post('/ask', requireAuth, async (req, res) => {
   let clientAborted = false;
   req.on('close', () => {
@@ -35,7 +35,7 @@ router.post('/ask', requireAuth, async (req, res) => {
   });
 
   try {
-    const { message, question, subject } = req.body;
+    const { message, question, subject, detailed } = req.body;
     const query = (question || message || '').trim();
     if (!query) {
       return res.status(400).json({ message: 'Please provide a question' });
@@ -43,21 +43,29 @@ router.post('/ask', requireAuth, async (req, res) => {
 
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // 1. Record user message in chats.json
-    const userMsg = {
+    // 1. Record user message in chat history
+    await appendUserChat(req.userId, {
       who: 'You',
       text: query,
       me: true,
       subject: subject || 'All',
       time: now,
       createdAt: new Date().toISOString(),
-    };
-    appendUserChat(req.userId, userMsg);
+    });
+
+    // 1b. Conversation memory: prior messages (the entry just appended IS the
+    // current question, so drop it) — lets follow-ups reference earlier turns.
+    const history = (await getUserChats(req.userId))
+      .slice(0, -1)
+      .slice(-6)
+      .map((c) => ({ role: c.me ? 'user' : 'assistant', text: c.text || '' }));
 
     // 2. Query AI with RAG
     const result = await answerAcademicQuery({
       question: query,
       subject: subject || 'All',
+      detailed: detailed !== false,
+      history,
     });
 
     if (clientAborted) {
@@ -65,8 +73,8 @@ router.post('/ask', requireAuth, async (req, res) => {
       return;
     }
 
-    // 3. Record AI message in chats.json
-    const aiMsg = {
+    // 3. Record AI message in chat history
+    await appendUserChat(req.userId, {
       who: 'Noteversity AI',
       text: result.reply,
       sources: result.sources || [],
@@ -74,29 +82,32 @@ router.post('/ask', requireAuth, async (req, res) => {
       subject: subject || 'All',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       createdAt: new Date().toISOString(),
-    };
-    appendUserChat(req.userId, aiMsg);
+    });
 
     res.json(result);
   } catch (err) {
     if (clientAborted) return;
-    console.error('[ChatBot Error]:', err);
+    console.error('[ChatBot Error]');
     res.status(500).json({
       message: err.message || 'Failed to generate answer from AI',
     });
   }
 });
 
-// GET /api/chat/:room — legacy subject rooms
-router.get('/:room', requireAuth, async (req, res) => {
+// POST /api/chat/suggest — follow-up suggestion chips for the exchange just answered.
+// Separate endpoint so the main answer's latency is unchanged; a suggestions
+// failure can never break the answer itself (errors → empty list).
+router.post('/suggest', requireAuth, async (req, res) => {
   try {
-    const messages = await Message.find({ room: req.params.room })
-      .populate('sender', 'name')
-      .sort({ createdAt: 1 })
-      .limit(200);
-    res.json(messages);
+    const { question, answer, subject } = req.body;
+    if (!question || !answer) {
+      return res.status(400).json({ message: 'question and answer are required' });
+    }
+    const suggestions = await suggestFollowUps({ question, answer, subject });
+    res.json({ suggestions });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to load messages' });
+    console.error('[Chat Suggest Error]');
+    res.json({ suggestions: [] });
   }
 });
 

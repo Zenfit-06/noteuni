@@ -8,6 +8,9 @@ const noteSchema = new mongoose.Schema(
     semester: { type: Number, required: true },
     fileUrl: { type: String, required: true },
     fileType: { type: String },
+    // Plain text extracted once at upload/seed time so the AI can read the
+    // document without touching the filesystem on every request.
+    extractedText: { type: String, default: '' },
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     downloads: { type: Number, default: 0 },
   },

@@ -1,18 +1,29 @@
+/**
+ * Authentication routes. There is NO user login in this app — the public
+ * site runs on anonymous per-browser guest sessions, and the only
+ * credential-based login is the admin account below.
+ *
+ * Sessions are signed JWTs in HttpOnly cookies (never localStorage):
+ *   nv_session — guest identity, 7 days
+ *   nv_admin   — admin session (typ:'admin'), 8 hours, required by every
+ *                admin API via middleware/admin.js
+ */
 const express = require('express');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { sendOtpEmail } = require('../config/mailer');
 const { syncUsersToJson } = require('../services/jsonStore');
+const { jwtSecret, IS_PROD, GUEST_SESSION_TTL, ADMIN_SESSION_TTL, GUEST_COOKIE_MAX_AGE, ADMIN_COOKIE_MAX_AGE } = require('../config/env');
 
 const router = express.Router();
 
-function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
+const GUEST_COOKIE = 'nv_session';
+const ADMIN_COOKIE = 'nv_admin';
+const ADMIN_EMAIL = 'admin@paruluniversity.ac.in';
 
-// Simple in-memory rate limiter: allows `max` hits per key per sliding window.
+// Simple in-memory rate limiter (per warm serverless instance; each instance
+// also enforces it, and bcrypt cost throttles guessing regardless).
 const rateBuckets = new Map();
 function rateLimit(key, max, windowMs) {
   const now = Date.now();
@@ -31,89 +42,25 @@ function rateLimit(key, max, windowMs) {
   return true;
 }
 
-// POST /api/auth/request-otp
-router.post('/request-otp', async (req, res) => {
-  try {
-    const { name, email, rollNumber, branch, semester } = req.body;
+function setSessionCookie(res, name, token, maxAgeMs) {
+  res.cookie(name, token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: IS_PROD,
+    maxAge: maxAgeMs,
+    path: '/',
+  });
+}
 
-    if (!email || !email.toLowerCase().endsWith('@' + process.env.ALLOWED_EMAIL_DOMAIN)) {
-      return res.status(400).json({ message: `Use your official @${process.env.ALLOWED_EMAIL_DOMAIN} email` });
-    }
-
-    const normalizedEmail = email.toLowerCase();
-    if (!rateLimit('otp-req:' + normalizedEmail, 3, 10 * 60 * 1000)) {
-      return res.status(429).json({ message: 'Too many OTP requests. Please wait before requesting again.' });
-    }
-
-    const otp = generateOtp();
-    const otpHash = await bcrypt.hash(otp, 10);
-    const otpExpiresAt = new Date(Date.now() + Number(process.env.OTP_EXPIRY_MINUTES) * 60 * 1000);
-
-    let user = await User.findOne({ email: normalizedEmail });
-    if (!user) {
-      user = new User({ name: name || email.split('@')[0], email: email.toLowerCase(), rollNumber, branch, semester });
-    }
-    user.otpHash = otpHash;
-    user.otpExpiresAt = otpExpiresAt;
-    await user.save();
-
-    await sendOtpEmail(user.email, otp);
-
-    res.json({ message: 'OTP sent to your email' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to send OTP' });
-  }
-});
-
-// POST /api/auth/verify-otp
-router.post('/verify-otp', async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    const normalizedEmail = (email || '').toLowerCase();
-
-    if (!rateLimit('otp-ver:' + normalizedEmail, 5, 10 * 60 * 1000)) {
-      return res.status(429).json({ message: 'Too many attempts, request a new OTP' });
-    }
-
-    const user = await User.findOne({ email: normalizedEmail });
-
-    if (!user || !user.otpHash || !user.otpExpiresAt) {
-      return res.status(400).json({ message: 'Request an OTP first' });
-    }
-    if (user.otpExpiresAt < new Date()) {
-      return res.status(400).json({ message: 'OTP expired, request a new one' });
-    }
-
-    const isMatch = await bcrypt.compare(otp, user.otpHash);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Incorrect OTP' });
-    }
-
-    user.isVerified = true;
-    user.otpHash = undefined;
-    user.otpExpiresAt = undefined;
-    await user.save();
-
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        branch: user.branch,
-        semester: user.semester,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Verification failed' });
-  }
-});
+function displayUser(user) {
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    branch: user.branch,
+    semester: user.semester,
+  };
+}
 
 // POST /api/auth/guest-session — silent guest session for the login-free app.
 // Creates a fresh Guest user per browser; can never return the admin account.
@@ -132,143 +79,98 @@ router.post('/guest-session', async (req, res) => {
       isVerified: true,
     });
 
-    // Persist so guest ids (and their chat history) survive server restarts
     await syncUsersToJson(User);
 
-    const secret = process.env.JWT_SECRET || 'noteversity_dev_secret_key_2026_jwt_token_secure';
-    const token = jwt.sign({ userId: user._id }, secret, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    const token = jwt.sign({ userId: user._id, typ: 'guest' }, jwtSecret(), {
+      expiresIn: GUEST_SESSION_TTL,
     });
+    setSessionCookie(res, GUEST_COOKIE, token, GUEST_COOKIE_MAX_AGE);
 
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        branch: user.branch,
-        semester: user.semester,
-      },
-    });
+    res.json({ user: displayUser(user) });
   } catch (err) {
     console.error('Guest session error:', err);
     res.status(500).json({ message: 'Failed to create guest session' });
   }
 });
 
-// POST /api/auth/signup
-router.post('/signup', async (req, res) => {
+// GET /api/auth/me — current identity from either session cookie.
+router.get('/me', async (req, res) => {
   try {
-    const { name, email, password, rollNumber, branch, semester } = req.body;
-    const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN || 'paruluniversity.ac.in';
-    const normalizedEmail = (email || '').trim().toLowerCase();
-
-    if (!normalizedEmail || !normalizedEmail.endsWith('@' + allowedDomain)) {
-      return res.status(400).json({ message: `Only official @${allowedDomain} emails are allowed` });
+    const adminToken = req.cookies ? req.cookies[ADMIN_COOKIE] : null;
+    if (adminToken) {
+      try {
+        const decoded = jwt.verify(adminToken, jwtSecret());
+        if (decoded.typ === 'admin' && decoded.userId) {
+          const admin = await User.findById(decoded.userId);
+          if (admin) return res.json({ user: displayUser(admin) });
+        }
+      } catch (e) { /* fall through to guest */ }
     }
 
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'Full name is required' });
+    const guestToken = req.cookies ? req.cookies[GUEST_COOKIE] : null;
+    if (guestToken) {
+      const decoded = jwt.verify(guestToken, jwtSecret());
+      const user = await User.findById(decoded.userId);
+      if (user) return res.json({ user: displayUser(user) });
     }
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-    }
-
-    const existing = await User.findOne({ email: normalizedEmail });
-    if (existing) {
-      return res.status(400).json({ message: 'An account with this college email already exists. Please sign in instead.' });
-    }
-
-    const semNum = Number(semester || 5);
-    if (semNum !== 5) {
-      return res.status(400).json({ message: 'Only Semester 5 is currently available. We are working on other semesters!' });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      name: name.trim(),
-      email: normalizedEmail,
-      passwordHash,
-      rollNumber: rollNumber ? rollNumber.trim() : undefined,
-      branch: branch ? branch.trim() : 'CSE',
-      semester: semester ? Number(semester) : 5,
-      isVerified: true,
-    });
-
-    await syncUsersToJson(User);
-
-    const secret = process.env.JWT_SECRET || 'noteversity_dev_secret_key_2026_jwt_token_secure';
-    const token = jwt.sign({ userId: user._id }, secret, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
-
-    res.status(201).json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        rollNumber: user.rollNumber,
-        branch: user.branch,
-        semester: user.semester,
-      },
-    });
+    return res.status(401).json({ message: 'No active session' });
   } catch (err) {
-    console.error('Signup error:', err);
-    res.status(500).json({ message: 'Signup failed. Please try again.' });
+    return res.status(401).json({ message: 'No active session' });
   }
 });
 
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
+// POST /api/auth/admin/login — the ONLY credential check in the app.
+// Compares against ADMIN_PASSWORD_HASH (bcrypt) from server env; the
+// password is never stored, logged, or echoed. Generic errors only.
+router.post('/admin/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN || 'paruluniversity.ac.in';
-    const normalizedEmail = (email || '').trim().toLowerCase();
-
-    if (!normalizedEmail || !normalizedEmail.endsWith('@' + allowedDomain)) {
-      return res.status(400).json({ message: `Please enter a valid @${allowedDomain} email` });
+    if (!rateLimit('admin-login:' + (req.ip || 'unknown'), 5, 15 * 60 * 1000)) {
+      return res.status(429).json({ message: 'Too many login attempts. Try again in 15 minutes.' });
     }
 
-    if (!password) {
-      return res.status(400).json({ message: 'Please enter your password' });
+    const password = typeof req.body.password === 'string' ? req.body.password : '';
+    if (!password || password.length > 256) {
+      return res.status(400).json({ message: 'Please enter the admin password.' });
     }
 
-    const user = await User.findOne({ email: normalizedEmail });
-    if (!user) {
-      return res.status(404).json({ message: 'No account found with this email. Please sign up first.' });
+    const hash = (process.env.ADMIN_PASSWORD_HASH || '').trim();
+    // Compare against a throwaway hash even when unconfigured so response
+    // timing does not reveal whether an admin password is set.
+    const compareTarget = hash.startsWith('$2') ? hash : '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+    const match = await bcrypt.compare(password, compareTarget).catch(() => false);
+    if (!match) {
+      return res.status(401).json({ message: 'Invalid admin credentials' });
     }
 
-    if (!user.passwordHash) {
-      return res.status(403).json({ message: 'This account was created via OTP and has no password set.' });
+    let admin = await User.findOne({ email: ADMIN_EMAIL });
+    if (!admin) {
+      admin = await User.create({
+        name: 'Parul Admin',
+        email: ADMIN_EMAIL,
+        rollNumber: '2113101',
+        branch: 'Computer Science & Engineering',
+        semester: 5,
+        isVerified: true,
+      });
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Incorrect password. Please try again.' });
-    }
-
-    const secret = process.env.JWT_SECRET || 'noteversity_dev_secret_key_2026_jwt_token_secure';
-    const token = jwt.sign({ userId: user._id }, secret, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    const token = jwt.sign({ userId: admin._id, typ: 'admin' }, jwtSecret(), {
+      expiresIn: ADMIN_SESSION_TTL,
     });
+    setSessionCookie(res, ADMIN_COOKIE, token, ADMIN_COOKIE_MAX_AGE);
 
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        rollNumber: user.rollNumber,
-        branch: user.branch,
-        semester: user.semester,
-      },
-    });
+    res.json({ user: displayUser(admin) });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ message: 'Login failed. Please try again.' });
+    console.error('Admin login error');
+    res.status(500).json({ message: 'Admin login failed. Please try again.' });
   }
+});
+
+// POST /api/auth/admin/logout — clears the admin session cookie.
+router.post('/admin/logout', (req, res) => {
+  res.clearCookie(ADMIN_COOKIE, { path: '/' });
+  res.json({ message: 'Logged out' });
 });
 
 module.exports = router;

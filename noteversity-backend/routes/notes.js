@@ -1,11 +1,13 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const crypto = require('crypto');
+const path = require('path');
 const Note = require('../models/Note');
 const User = require('../models/User');
-const path = require('path');
-const fs = require('fs');
 const requireAuth = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
 const upload = require('../middleware/upload');
+const storage = require('../services/storage');
 const { syncNotesToJson, syncUsersToJson } = require('../services/jsonStore');
 
 const router = express.Router();
@@ -31,26 +33,31 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, r
     const { title, subject, branch, semester } = req.body;
     if (!req.file) return res.status(400).json({ message: 'File is required' });
     if (!title || !title.trim() || !VALID_SUBJECTS.includes(subject)) {
-      if (req.file.path) fs.unlink(req.file.path, () => {});
       return res.status(400).json({ message: 'Title and subject are required' });
     }
 
+    const ext = (path.extname(req.file.originalname || '') || '.pdf').toLowerCase();
+    const filename = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}${ext}`;
+    const fileUrl = await storage.putPdf(req.file.buffer, filename);
+    const extractedText = req.file.mimetype === 'application/pdf'
+      ? await storage.extractPdfText(req.file.buffer)
+      : '';
+
     const note = await Note.create({
-      title,
+      title: title.trim(),
       subject,
-      branch,
-      semester,
-      fileUrl: `/uploads/${req.file.filename}`,
+      branch: (branch && String(branch).trim()) || 'CSE',
+      semester: Number(semester) || 5,
+      fileUrl,
       fileType: req.file.mimetype,
+      extractedText,
       uploadedBy: req.userId,
     });
 
     await syncNotesToJson(Note);
     res.status(201).json(note);
   } catch (err) {
-    console.error(err);
-    // Remove the just-saved file so failed creates don't leave orphans
-    if (req.file && req.file.path) fs.unlink(req.file.path, () => {});
+    console.error('Note upload error');
     res.status(500).json({ message: 'Upload failed' });
   }
 });
@@ -58,34 +65,39 @@ router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, r
 // DELETE /api/notes/:id - ADMIN ONLY
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid note id' });
+    }
     const note = await Note.findById(req.params.id);
     if (!note) return res.status(404).json({ message: 'Note not found' });
 
-    if (note.fileUrl && !note.fileUrl.includes('sample-document.pdf')) {
-      const filePath = path.join(__dirname, '..', note.fileUrl);
-      if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); } catch (e) { console.warn('Could not unlink file:', e.message); }
-      }
-    }
-
+    if (note.fileUrl) await storage.deletePdf(path.basename(note.fileUrl));
     await Note.findByIdAndDelete(req.params.id);
     await syncNotesToJson(Note);
     res.json({ message: 'Note deleted successfully', id: req.params.id });
   } catch (err) {
-    console.error('Delete error:', err);
+    console.error('Note delete error');
     res.status(500).json({ message: 'Failed to delete note' });
   }
 });
 
 // POST /api/notes/:id/download  — increments count + tracks on user dashboard
 router.post('/:id/download', requireAuth, async (req, res) => {
-  const note = await Note.findByIdAndUpdate(req.params.id, { $inc: { downloads: 1 } }, { new: true });
-  if (!note) return res.status(404).json({ message: 'Note not found' });
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid note id' });
+    }
+    const note = await Note.findByIdAndUpdate(req.params.id, { $inc: { downloads: 1 } }, { new: true });
+    if (!note) return res.status(404).json({ message: 'Note not found' });
 
-  await User.findByIdAndUpdate(req.userId, { $addToSet: { downloadedNotes: note._id } });
-  await syncNotesToJson(Note);
-  await syncUsersToJson(User);
-  res.json({ fileUrl: note.fileUrl });
+    await User.findByIdAndUpdate(req.userId, { $addToSet: { downloadedNotes: note._id } });
+    await syncNotesToJson(Note);
+    await syncUsersToJson(User);
+    res.json({ fileUrl: note.fileUrl });
+  } catch (err) {
+    console.error('Note download error');
+    res.status(500).json({ message: 'Download tracking failed' });
+  }
 });
 
 module.exports = router;

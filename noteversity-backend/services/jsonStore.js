@@ -1,18 +1,22 @@
 const fs = require('fs');
 const path = require('path');
+const { IS_PROD } = require('../config/env');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// 4 distinct JSON files for clear data separation
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const NOTES_FILE = path.join(DATA_DIR, 'notes.json');
 const PYQS_FILE = path.join(DATA_DIR, 'pyqs.json');
-const CHATS_FILE = path.join(DATA_DIR, 'chats.json');
+
+// In production Mongo is the source of truth and the serverless filesystem is
+// ephemeral — JSON mirroring only exists for local development convenience.
+const SYNC_ENABLED = !IS_PROD;
 
 function readJson(filePath, fallback = []) {
+  if (IS_PROD) return fallback;
   try {
     if (!fs.existsSync(filePath)) return fallback;
     const content = fs.readFileSync(filePath, 'utf8');
@@ -24,6 +28,7 @@ function readJson(filePath, fallback = []) {
 }
 
 function writeJson(filePath, data) {
+  if (IS_PROD) return;
   try {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
@@ -31,10 +36,8 @@ function writeJson(filePath, data) {
   }
 }
 
-/**
- * Sync Mongoose collections to their respective JSON files
- */
 async function syncUsersToJson(UserModel) {
+  if (!SYNC_ENABLED) return;
   try {
     const users = await UserModel.find({}).lean();
     writeJson(USERS_FILE, users);
@@ -44,6 +47,7 @@ async function syncUsersToJson(UserModel) {
 }
 
 async function syncNotesToJson(NoteModel) {
+  if (!SYNC_ENABLED) return;
   try {
     const notes = await NoteModel.find({}).lean();
     writeJson(NOTES_FILE, notes);
@@ -53,6 +57,7 @@ async function syncNotesToJson(NoteModel) {
 }
 
 async function syncPyqsToJson(PyqModel) {
+  if (!SYNC_ENABLED) return;
   try {
     const pyqs = await PyqModel.find({}).lean();
     writeJson(PYQS_FILE, pyqs);
@@ -61,45 +66,14 @@ async function syncPyqsToJson(PyqModel) {
   }
 }
 
-/**
- * Chat history persistence per user
- */
-function getUserChats(userId) {
-  const allChats = readJson(CHATS_FILE, {});
-  return allChats[String(userId)] || [];
-}
-
-function appendUserChat(userId, chatItem) {
-  const allChats = readJson(CHATS_FILE, {});
-  const uid = String(userId);
-  if (!allChats[uid]) {
-    allChats[uid] = [];
-  }
-  allChats[uid].push(chatItem);
-  // Cap at 150 items per user to preserve performance
-  if (allChats[uid].length > 150) {
-    allChats[uid] = allChats[uid].slice(-150);
-  }
-  writeJson(CHATS_FILE, allChats);
-}
-
-function clearUserChats(userId) {
-  const allChats = readJson(CHATS_FILE, {});
-  delete allChats[String(userId)];
-  writeJson(CHATS_FILE, allChats);
-}
-
 module.exports = {
+  SYNC_ENABLED,
   USERS_FILE,
   NOTES_FILE,
   PYQS_FILE,
-  CHATS_FILE,
   readJson,
   writeJson,
   syncUsersToJson,
   syncNotesToJson,
   syncPyqsToJson,
-  getUserChats,
-  appendUserChat,
-  clearUserChats,
 };

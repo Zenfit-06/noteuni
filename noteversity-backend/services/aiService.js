@@ -189,20 +189,39 @@ function buildExcerpt(text, keywords, phrase, budget, weights, rare) {
 
 /**
  * Ask Gemini with automatic fallback across reliable models.
+ * A hard time budget keeps serverless invocations under the function limit.
  */
+const AI_TIME_BUDGET_MS = 50000;
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
+    ),
+  ]);
+}
+
 async function generateWithFallback(apiKey, prompt) {
   const genAI = new GoogleGenerativeAI(apiKey);
   const candidateModels = [
-    process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
+    process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
     'gemini-flash-latest',
     'gemini-flash-lite-latest',
   ];
 
   let lastError = null;
+  const startedAt = Date.now();
   for (const modelName of candidateModels) {
+    const remaining = AI_TIME_BUDGET_MS - (Date.now() - startedAt);
+    if (remaining <= 2000) break;
     try {
       const model = genAI.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(prompt);
+      const result = await withTimeout(
+        model.generateContent(prompt),
+        Math.min(remaining, 45000),
+        `Model ${modelName}`
+      );
       const text = result?.response?.text();
       if (text) {
         return { text, modelUsed: modelName };
@@ -283,9 +302,22 @@ async function generateWithXAI(prompt) {
 
 /**
  * Core RAG Chat handler: reads relevant notes/PYQs and generates strictly academic AI response.
+ * `history` (optional) = recent prior messages [{role:'user'|'assistant', text}] that let
+ * follow-up questions like "explain that more simply" resolve against the conversation.
  */
-async function answerAcademicQuery({ question, subject = 'All', detailed = true }) {
+async function answerAcademicQuery({ question, subject = 'All', detailed = true, history = [] }) {
   const normSub = normalizeSubject(subject);
+
+  // 0. Conversation memory: keep the last few exchanges, truncated, and remember
+  //    the student's previous message for retrieval blending.
+  const recentHistory = (Array.isArray(history) ? history : [])
+    .slice(-6)
+    .map((m) => ({
+      role: m.role === 'user' ? 'Student' : 'AI',
+      text: String(m.text || '').trim().slice(0, m.role === 'user' ? 200 : 400),
+    }))
+    .filter((m) => m.text);
+  const lastUserText = [...recentHistory].reverse().find((m) => m.role === 'Student')?.text || '';
 
   // 1. Check for quick casual / greeting intent to avoid launching full lectures on "hey"
   const casualReply = checkCasualIntent(question, normSub);
@@ -323,18 +355,30 @@ async function answerAcademicQuery({ question, subject = 'All', detailed = true 
     ...pyqs.map((p) => ({ ...p, docType: 'PYQ' })),
   ];
 
-  // 3. Extract text for every candidate, then score with IDF-weighted keyword relevance
-  const keywords = extractKeywords(question);
+  // 3. Extract text for every candidate, then score with IDF-weighted keyword relevance.
+  //    For follow-ups ("explain simpler", "what about unit 5?") the raw question alone
+  //    retrieves poorly, so document scoring blends in the student's previous message;
+  //    the answer prompt below still receives only the real question + history.
+  const retrievalQuery = lastUserText ? `${lastUserText} ${question}` : question;
+  const keywords = extractKeywords(retrievalQuery);
   const phrase = keywords.filter((k) => k.length > 2).slice(0, 6).join(' ') || '';
 
   const scored = [];
   for (const doc of candidateDocs) {
-    if (!doc.fileUrl) continue;
-    const cleanUrl = doc.fileUrl.startsWith('/') ? doc.fileUrl.slice(1) : doc.fileUrl;
-    const diskPath = path.join(__dirname, '..', cleanUrl);
-    if (!fs.existsSync(diskPath)) continue;
-
-    const text = await extractPdfText(diskPath);
+    let text = '';
+    // Preferred source: text extracted once at upload/seed time — no filesystem
+    // access needed (required on serverless, faster everywhere).
+    if (doc.extractedText && doc.extractedText.length >= MIN_READABLE_TEXT) {
+      text = doc.extractedText;
+    } else if (doc.fileUrl) {
+      // Dev fallback: parse the local file on demand
+      const cleanUrl = doc.fileUrl.startsWith('/') ? doc.fileUrl.slice(1) : doc.fileUrl;
+      const diskPath = path.join(__dirname, '..', cleanUrl);
+      if (fs.existsSync(diskPath)) {
+        text = await extractPdfText(diskPath);
+      }
+    }
+    if (!text) continue;
     const readable = !!text && text.length >= MIN_READABLE_TEXT;
     scored.push({ doc, text, readable, relevance: 0 });
   }
@@ -390,10 +434,19 @@ async function answerAcademicQuery({ question, subject = 'All', detailed = true 
         : '')
     : `(Note: No readable uploaded PDF documents currently available for ${normSub}. Use your general academic curriculum knowledge.)`;
 
+  const conversationBlock = recentHistory.length
+    ? `=== RECENT CONVERSATION (for context only) ===
+${recentHistory.map((m) => `${m.role}: ${m.text}`).join('\n')}
+===============================================
+The current question may reference this conversation (e.g. "explain that more simply", "what about unit 5?", "why?"). Resolve pronouns and references like "it", "that", or "this topic" against the conversation above when answering.
+
+`
+    : '';
+
   const prompt = `You are Noteversity AI — the dedicated academic mentor and tutor for Parul University engineering students.
 
 STUDENT'S SUBJECT FOCUS: ${normSub === 'All' ? 'General Computer Science & Engineering' : normSub}
-STUDENT'S QUESTION: ${question}
+${conversationBlock}STUDENT'S QUESTION: ${question}
 
 ${contextSnippet}
 
@@ -480,8 +533,60 @@ STRICT GUARDRAILS & RESPONSE RULES:
   };
 }
 
+/**
+ * Follow-up suggestion chips: given the exchange just answered, produce up to 3
+ * short questions the student would naturally ask next. Best-effort — any
+ * failure returns [] so the UI simply shows no chips.
+ */
+async function suggestFollowUps({ question, answer, subject = 'All' }) {
+  const prompt = `You are Noteversity AI, an academic tutor for engineering students.
+The student just asked: "${String(question).slice(0, 400)}"
+Subject focus: ${normalizeSubject(subject)}
+Your answer was: "${String(answer).slice(0, 1500)}"
+
+Suggest exactly 3 short follow-up questions the student would naturally ask next:
+- one clarifying a concept from the answer
+- one going deeper into the topic
+- one exam-oriented (how it is asked or compared in university exams)
+Rules: each question max 12 words, same language as the conversation, self-contained (no "it/that" references), no numbering, no quotes.
+Output ONLY a JSON array of 3 strings and nothing else.`;
+
+  try {
+    let raw = null;
+    const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
+    if (geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
+      try {
+        const res = await generateWithFallback(geminiApiKey, prompt);
+        raw = res.text;
+      } catch (err) {
+        console.warn(`[AI Service] Gemini follow-up suggestions failed: ${err.message}`);
+      }
+    }
+    if (!raw) {
+      const xaiApiKey = (process.env.XAI_API_KEY || '').trim();
+      if (xaiApiKey && xaiApiKey !== 'your_xai_api_key_here') {
+        const res = await generateWithXAI(prompt);
+        raw = res.text;
+      }
+    }
+    if (!raw) return [];
+
+    const match = raw.match(/\[[\s\S]*\]/);
+    const arr = match ? JSON.parse(match[0]) : null;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((s) => String(s).trim())
+      .filter((s) => s && s.length <= 80)
+      .slice(0, 3);
+  } catch (err) {
+    console.warn('[AI Service] Follow-up suggestions unavailable:', err.message);
+    return [];
+  }
+}
+
 module.exports = {
   answerAcademicQuery,
+  suggestFollowUps,
   extractPdfText,
   normalizeSubject,
   extractKeywords,

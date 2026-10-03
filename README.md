@@ -59,14 +59,43 @@ The batch script will automatically:
 
 ---
 
-## 🔑 Default Accounts & Access Roles
+## 🔑 Access Roles
 
-| Role | Email | Password | Permissions |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin@paruluniversity.ac.in` | `admin123` | Full access: Upload notes/PYQs, delete files, manage repository, ChatBot |
-| **Student** | Any `@paruluniversity.ac.in` email | *(set on registration)* | Search, view, download notes & PYQs, ask AI ChatBot, track personal stats |
+| Role | How access works | Permissions |
+| :--- | :--- | :--- |
+| **Visitor / Student** | None — the site opens directly with an anonymous per-browser guest session (no accounts, no registration) | Search, view, download notes & PYQs, ask AI ChatBot, personal stats |
+| **Admin** | 🛡️ icon at the bottom-left of the sidebar → password (set via `ADMIN_PASSWORD_HASH` env var) | Upload notes/PYQs, delete files, manage repository |
 
-> **Note on Registration**: New student signups are strictly validated to official `@paruluniversity.ac.in` domains. During the initial rollout, registration is automatically locked to **Semester 5** (*"We are working on other semesters!"*).
+> There is **no user login system**. Sessions are HttpOnly cookies — nothing sensitive is stored in the browser.
+
+---
+
+## 🚢 Deploying to Vercel (production)
+
+The app runs as a Vercel serverless function (`api/index.js`) + static frontend, with MongoDB Atlas for the database and PDF storage (GridFS).
+
+1. **Create a free MongoDB Atlas cluster** and copy the connection string (allow access from `0.0.0.0/0` — Vercel IPs are dynamic).
+2. **Sync the PDF library + seed the cloud database** (one-time, run locally):
+   ```
+   cd noteversity-backend
+   set MONGO_URI=mongodb+srv://user:pass@cluster0.xxx.mongodb.net/noteversity
+   npm run sync:cloud
+   ```
+3. **Generate production secrets**:
+   ```
+   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"          :: JWT_SECRET
+   node -e "console.log(require('bcryptjs').hashSync('YOUR_ADMIN_PASSWORD',10))"     :: ADMIN_PASSWORD_HASH
+   ```
+4. **Push to GitHub → Vercel dashboard → Add New Project → Import.** Framework preset: *Other*; no build command needed (`vercel.json` handles routing, headers, and function settings).
+5. **Add Environment Variables** (Production):
+   | Variable | Value |
+   | :--- | :--- |
+   | `MONGO_URI` | your Atlas connection string |
+   | `JWT_SECRET` | the long random string from step 3 |
+   | `ADMIN_PASSWORD_HASH` | the bcrypt hash from step 3 |
+   | `GEMINI_API_KEY` | your Gemini API key |
+   | `XAI_API_KEY` | *(optional)* backup AI key |
+6. **Deploy**, then open the URL — the site loads with an auto guest session; admin via the 🛡️ icon.
 
 ---
 

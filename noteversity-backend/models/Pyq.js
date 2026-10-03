@@ -10,6 +10,8 @@ const pyqSchema = new mongoose.Schema(
     examType: { type: String, enum: ['MidSem1', 'MidSem2', 'EndSem', 'BackPaper'], required: true },
     isSolved: { type: Boolean, default: false },
     fileUrl: { type: String, required: true },
+    // Plain text extracted once at upload/seed time (see Note.extractedText)
+    extractedText: { type: String, default: '' },
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     downloads: { type: Number, default: 0 },
   },
