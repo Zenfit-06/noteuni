@@ -70,7 +70,7 @@ app.use('/api/pyqs', pyqsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', build: '2026-10-05-chat-abort-fix' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', build: '2026-10-05-view-cache' }));
 
 // ---- Central error handler: multer problems → clean JSON 400, everything
 // else → generic JSON 500 with the stack logged server-side only ----

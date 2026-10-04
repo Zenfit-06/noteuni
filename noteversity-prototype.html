@@ -921,7 +921,13 @@ function renderSkeleton(gridId, count = 8){
     </div>`).join('');
 }
 
-async function fetchNotes(){
+let notesLoadedKey = null; // filter|search combo the current notes array was fetched for
+async function fetchNotes(force){
+  const key = notesFilter + '|' + (notesSearch || '');
+  if (!force && key === notesLoadedKey) {
+    renderNotes(); // already have this view's data — skip the server round-trip
+    return;
+  }
   if (!notes || notes.length === 0) {
     renderSkeleton('notesGrid');
   }
@@ -929,10 +935,11 @@ async function fetchNotes(){
     let url = `${API_BASE}/api/notes?`;
     if(notesFilter !== "All") url += `subject=${encodeURIComponent(notesFilter)}&`;
     if(notesSearch) url += `search=${encodeURIComponent(notesSearch)}&`;
-    
+
     const res = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
     if(res.ok){
       notes = await res.json();
+      notesLoadedKey = key;
       renderNotes();
       updateContribStat();
       updateTotalResStat();
@@ -988,7 +995,13 @@ function renderNotes(){
 let pyqFilter = "All", pyqSearch = "";
 function filterPyqs(c){ pyqFilter = c; fetchPyqs(); }
 
-async function fetchPyqs(){
+let pyqsLoadedKey = null; // filter|search combo the current pyqs array was fetched for
+async function fetchPyqs(force){
+  const key = pyqFilter + '|' + (pyqSearch || '');
+  if (!force && key === pyqsLoadedKey) {
+    renderPyqs(); // already have this view's data — skip the server round-trip
+    return;
+  }
   if (!pyqs || pyqs.length === 0) {
     renderSkeleton('pyqGrid');
   }
@@ -1000,6 +1013,7 @@ async function fetchPyqs(){
     const res = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
     if(res.ok){
       pyqs = await res.json();
+      pyqsLoadedKey = key;
       renderPyqs();
       updateContribStat();
       updateTotalResStat();
@@ -1070,7 +1084,9 @@ async function downloadItem(id, title, type = 'note'){
         link.click();
         document.body.removeChild(link);
       }
-      if(type === 'pyq') fetchPyqs(); else fetchNotes();
+      // Update the download count in place — no list refetch needed.
+      if (type === 'pyq') { const it = pyqs.find(p => p._id === id); if (it) it.downloads = (it.downloads || 0) + 1; renderPyqs(); }
+      else { const it = notes.find(n => n._id === id); if (it) it.downloads = (it.downloads || 0) + 1; renderNotes(); }
       renderDashboard();
     } else {
       showToast("Download request failed");
@@ -1097,7 +1113,7 @@ async function deleteItem(id, title, type = 'note'){
     });
     if(res.ok){
       showToast("Deleted: " + title);
-      if(type === 'pyq') fetchPyqs(); else fetchNotes();
+      if(type === 'pyq') fetchPyqs(true); else fetchNotes(true); // list changed — force refetch
       renderDashboard();
     } else {
       const data = await res.json();
