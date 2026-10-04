@@ -1,33 +1,22 @@
 const express = require('express');
 const requireAuth = require('../middleware/auth');
 const { answerAcademicQuery, suggestFollowUps } = require('../services/aiService');
-const { getUserChats, appendUserChat, clearUserChats } = require('../services/chatStore');
 
 const router = express.Router();
 
-// GET /api/chat/history — authenticated user's persistent chat conversation
-router.get('/history', requireAuth, async (req, res) => {
-  try {
-    const chats = await getUserChats(req.userId);
-    res.json(chats);
-  } catch (err) {
-    console.error('[Chat History Error]');
-    res.status(500).json({ message: 'Failed to retrieve chat history' });
-  }
+// GET /api/chat/history — chat transcripts live in each user's browser
+// (localStorage); the server keeps none. Compat stub for stale clients.
+router.get('/history', requireAuth, (req, res) => {
+  res.json([]);
 });
 
-// DELETE /api/chat/history — Clear authenticated user's chat conversation
-router.delete('/history', requireAuth, async (req, res) => {
-  try {
-    await clearUserChats(req.userId);
-    res.json({ message: 'Chat history cleared' });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to clear chat history' });
-  }
+// DELETE /api/chat/history — nothing stored server-side anymore.
+router.delete('/history', requireAuth, (req, res) => {
+  res.json({ message: 'Chat history is stored in your browser and was not modified' });
 });
 
 // POST /api/chat/ask — Ask AKGEC AI assistant (reads relevant notes via
-// extracted text + generates answer + persists in the user's chat history)
+// extracted text + generates the answer; the transcript is kept client-side)
 router.post('/ask', requireAuth, async (req, res) => {
   let clientAborted = false;
   req.on('close', () => {
@@ -35,32 +24,24 @@ router.post('/ask', requireAuth, async (req, res) => {
   });
 
   try {
-    const { message, question, subject, detailed } = req.body;
+    const { message, question, subject, detailed, history: clientHistory } = req.body;
     const query = (question || message || '').trim();
     if (!query) {
       return res.status(400).json({ message: 'Please provide a question' });
     }
 
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    // 1. Record user message in chat history
-    await appendUserChat(req.userId, {
-      who: 'You',
-      text: query,
-      me: true,
-      subject: subject || 'All',
-      time: now,
-      createdAt: new Date().toISOString(),
-    });
-
-    // 1b. Conversation memory: prior messages (the entry just appended IS the
-    // current question, so drop it) — lets follow-ups reference earlier turns.
-    const history = (await getUserChats(req.userId))
-      .slice(0, -1)
+    // Conversation memory comes from the client (its localStorage transcript,
+    // excluding the current question) — lets follow-ups reference earlier turns
+    // without the server storing any chat data.
+    const history = (Array.isArray(clientHistory) ? clientHistory : [])
       .slice(-6)
-      .map((c) => ({ role: c.me ? 'user' : 'assistant', text: c.text || '' }));
+      .filter((c) => c && typeof c.text === 'string' && c.text.trim())
+      .map((c) => ({
+        role: c.role === 'assistant' ? 'assistant' : 'user',
+        text: c.text.slice(0, 8000),
+      }));
 
-    // 2. Query AI with RAG
+    // Query AI with RAG
     const result = await answerAcademicQuery({
       question: query,
       subject: subject || 'All',
@@ -72,17 +53,6 @@ router.post('/ask', requireAuth, async (req, res) => {
       console.log('[ChatBot] Request aborted by client. Skipping response delivery.');
       return;
     }
-
-    // 3. Record AI message in chat history
-    await appendUserChat(req.userId, {
-      who: 'AKGEC AI',
-      text: result.reply,
-      sources: result.sources || [],
-      me: false,
-      subject: subject || 'All',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      createdAt: new Date().toISOString(),
-    });
 
     res.json(result);
   } catch (err) {

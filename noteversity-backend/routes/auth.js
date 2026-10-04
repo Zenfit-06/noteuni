@@ -140,14 +140,14 @@ router.post('/admin/login', async (req, res) => {
     }
 
     const hash = (process.env.ADMIN_PASSWORD_HASH || '').trim();
+    if (!hash) {
+      return res.status(500).json({ message: 'Admin password is not configured on the server (ADMIN_PASSWORD_HASH missing).' });
+    }
     let match = false;
     if (hash.startsWith('$2')) {
       match = await bcrypt.compare(password, hash).catch(() => false);
-    } else if (hash) {
+    } else {
       match = (password === hash);
-    }
-    if (!match) {
-      match = (password === 'Harsh2002');
     }
     if (!match) {
       return res.status(401).json({ message: 'Invalid admin credentials' });

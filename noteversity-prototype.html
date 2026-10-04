@@ -1182,37 +1182,67 @@ function askStarter(question, subj) {
   }
 }
 
-async function loadChatHistory() {
+/* Chat history lives in the browser (localStorage), keyed per signed-in
+   identity — the server never stores chat transcripts. */
+function chatIdentity() {
+  return ((currentUser && currentUser.email) || 'anon').toLowerCase();
+}
+function chatStoreKey() {
+  return 'noteversity_chat_history::' + chatIdentity();
+}
+const CHAT_HISTORY_CAP = 150;
+
+function persistChatHistory() {
   try {
-    var res = await fetch(API_BASE + '/api/chat/history', {
-      headers: getAuthHeaders()
-    });
-    if (res.ok) {
-      var msgs = await res.json();
-      if (Array.isArray(msgs)) {
-        botChatData = msgs;
-        renderMsgs();
-        updateChatStat();
-      }
-    }
-  } catch (err) {
-    console.warn('Chat history error:', err);
+    safeSet(chatStoreKey(), JSON.stringify(botChatData.slice(-CHAT_HISTORY_CAP)));
+  } catch (e) {
+    console.warn('Chat history save failed:', e);
   }
 }
 
-async function clearChatHistory() {
+async function loadChatHistory() {
+  var local = [];
+  try {
+    var raw = safeGet(chatStoreKey());
+    if (raw) local = JSON.parse(raw) || [];
+  } catch (e) {
+    local = [];
+  }
+  if (!Array.isArray(local)) local = [];
+
+  // One-time pull of the old server-side history so nothing is lost when
+  // upgrading from the Mongo-backed version.
+  if (!safeGet('noteversity_chat_migrated::' + chatIdentity())) {
+    safeSet('noteversity_chat_migrated::' + chatIdentity(), '1');
+    try {
+      var res = await fetch(API_BASE + '/api/chat/history', {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        var server = await res.json();
+        if (Array.isArray(server) && server.length && local.length === 0) {
+          local = server;
+          persistChatHistory();
+        }
+      }
+    } catch (err) {
+      console.warn('Old chat history migration skipped:', err);
+    }
+  }
+
+  botChatData = local;
+  renderMsgs();
+  updateChatStat();
+}
+
+function clearChatHistory() {
   if (botChatData.length === 0) return;
   if (!confirm('Clear your ChatBot conversation history?')) return;
   botChatData = [];
+  persistChatHistory();
   renderMsgs();
   updateChatStat();
-  try {
-    await fetch(API_BASE + '/api/chat/history', {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    showToast('Conversation cleared');
-  } catch (e) {}
+  showToast('Conversation cleared');
 }
 
 function renderMsgs(){
@@ -1396,12 +1426,16 @@ async function sendMsg(prefill) {
   currentChatAbortController = new AbortController();
   setGeneratingState(true);
 
-  // 2. Send to backend AI endpoint
+  // 2. Send to backend AI endpoint (recent turns ride along so follow-ups
+  //    keep their context — the server stores nothing itself)
+  const recentHistory = botChatData.slice(0, -1).slice(-6).map(function(m) {
+    return { role: m.me ? 'user' : 'assistant', text: m.text || '' };
+  });
   try {
     const res = await fetch(`${API_BASE}/api/chat/ask`, {
       method: 'POST',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ message: val, subject: subj, detailed: !chatQuickMode }),
+      body: JSON.stringify({ message: val, subject: subj, detailed: !chatQuickMode, history: recentHistory }),
       signal: currentChatAbortController.signal
     });
 
@@ -1441,6 +1475,7 @@ async function sendMsg(prefill) {
   } finally {
     currentChatAbortController = null;
     chatAbortedByUser = false;
+    persistChatHistory();
     setGeneratingState(false);
     updateChatStat();
     if (input) input.focus();
