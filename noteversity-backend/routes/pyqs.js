@@ -25,7 +25,12 @@ router.get('/', requireAuth, async (req, res) => {
   if (examType) filter.examType = examType;
   if (search) filter.title = { $regex: search, $options: 'i' };
 
-  const pyqs = await Pyq.find(filter).populate('uploadedBy', 'name').sort({ year: -1 });
+  // Same as notes: extractedText is server-side-only RAG fuel, not UI data.
+  const pyqs = await Pyq.find(filter)
+    .select('-extractedText -__v')
+    .populate('uploadedBy', 'name')
+    .sort({ year: -1 })
+    .lean();
   res.json(pyqs);
 });
 

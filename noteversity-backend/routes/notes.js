@@ -23,7 +23,13 @@ router.get('/', requireAuth, async (req, res) => {
   if (branch) filter.branch = branch;
   if (search) filter.title = { $regex: search, $options: 'i' };
 
-  const notes = await Note.find(filter).populate('uploadedBy', 'name').sort({ createdAt: -1 });
+  // extractedText (up to ~120 KB per doc) is server-side-only RAG fuel —
+  // shipping it to the browser made this response multiple megabytes.
+  const notes = await Note.find(filter)
+    .select('-extractedText -__v')
+    .populate('uploadedBy', 'name')
+    .sort({ createdAt: -1 })
+    .lean();
   res.json(notes);
 });
 
