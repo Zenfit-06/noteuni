@@ -41,13 +41,19 @@ router.post('/ask', requireAuth, async (req, res) => {
         text: c.text.slice(0, 8000),
       }));
 
-    // Query AI with RAG
-    const result = await answerAcademicQuery({
-      question: query,
-      subject: subject || 'All',
-      detailed: detailed !== false,
-      history,
-    });
+    // Query AI with RAG — hard 45 s ceiling so a stalled provider socket can
+    // never leave the user spinning past the 60 s serverless function limit.
+    const result = await Promise.race([
+      answerAcademicQuery({
+        question: query,
+        subject: subject || 'All',
+        detailed: detailed !== false,
+        history,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('The AI service took too long to respond. Please try again in a moment.')), 45000)
+      ),
+    ]);
 
     if (clientAborted) {
       console.log('[ChatBot] Request aborted by client. Skipping response delivery.');

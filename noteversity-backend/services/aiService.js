@@ -193,13 +193,16 @@ function buildExcerpt(text, keywords, phrase, budget, weights, rare) {
  * Ask Gemini with automatic fallback across reliable models.
  * A hard time budget keeps serverless invocations under the function limit.
  */
-const AI_TIME_BUDGET_MS = 50000;
+const AI_TIME_BUDGET_MS = 28000;
 
 function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
+      setTimeout(
+        () => reject(Object.assign(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`), { isTimeout: true })),
+        ms
+      )
     ),
   ]);
 }
@@ -209,7 +212,6 @@ async function generateWithFallback(apiKey, prompt) {
   const candidateModels = [
     process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
     'gemini-flash-latest',
-    'gemini-flash-lite-latest',
   ];
 
   let lastError = null;
@@ -217,20 +219,28 @@ async function generateWithFallback(apiKey, prompt) {
   for (const modelName of candidateModels) {
     const remaining = AI_TIME_BUDGET_MS - (Date.now() - startedAt);
     if (remaining <= 2000) break;
+    const perModelMs = Math.min(remaining, 20000);
     try {
-      const model = genAI.getGenerativeModel({ model: modelName });
+      // RequestOptions.timeout makes the SDK genuinely abort a stalled socket;
+      // the race below is the guaranteed ceiling on top of it.
+      const model = genAI.getGenerativeModel({ model: modelName }, { timeout: perModelMs });
       const result = await withTimeout(
         model.generateContent(prompt),
-        Math.min(remaining, 45000),
+        perModelMs,
         `Model ${modelName}`
       );
       const text = result?.response?.text();
       if (text) {
         return { text, modelUsed: modelName };
       }
+      lastError = new Error(`${modelName} returned an empty response`);
     } catch (err) {
       console.warn(`[AI Service] Model ${modelName} failed (${err.message}). Trying fallback...`);
       lastError = err;
+      // A timeout means the connection to Google's endpoint itself stalled —
+      // the remaining candidates share the same host, so don't burn the rest
+      // of the budget on them; leave it to the xAI fallback instead.
+      if (err && (err.isTimeout || /timed out/i.test(err.message || ''))) break;
     }
   }
 
@@ -256,7 +266,7 @@ async function generateWithXAI(prompt) {
   for (const modelName of candidateModels) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 40000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const res = await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
