@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
 const { jwtSecret } = require('../config/env');
 
 /**
@@ -22,25 +21,32 @@ function resolveToken(req) {
   return null;
 }
 
-async function requireAuth(req, res, next) {
+/**
+ * JWT-only authentication — no database round-trip. The JWT signature is the
+ * source of truth for req.userId; handlers that need the user document fetch
+ * it themselves. This keeps a flaky DB connection from ever surfacing as a
+ * bogus 401 "session expired" on a perfectly valid cookie.
+ */
+function requireAuth(req, res, next) {
   const token = resolveToken(req);
 
   if (!token) {
     return res.status(401).json({ message: 'Authentication required. Please sign in.' });
   }
 
+  let decoded;
   try {
-    const decoded = jwt.verify(token, jwtSecret());
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      return res.status(401).json({ message: 'User account no longer exists.' });
-    }
-    req.userId = user._id;
-    req.user = user;
-    return next();
+    decoded = jwt.verify(token, jwtSecret());
   } catch (err) {
     return res.status(401).json({ message: 'Session expired or invalid token. Please sign in again.' });
   }
+
+  if (!decoded || !decoded.userId) {
+    return res.status(401).json({ message: 'Session expired or invalid token. Please sign in again.' });
+  }
+
+  req.userId = decoded.userId;
+  return next();
 }
 
 module.exports = requireAuth;

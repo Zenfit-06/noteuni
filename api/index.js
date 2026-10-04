@@ -24,11 +24,18 @@ if (!cached) {
 }
 
 async function ensureDb() {
-  if (cached.conn && mongoose.connection.readyState === 1) {
+  const state = mongoose.connection.readyState;
+
+  if (state === 1) {
+    cached.conn = cached.conn || mongoose.connection;
     return cached.conn;
   }
 
-  if (!cached.promise || mongoose.connection.readyState === 0) {
+  // readyState 2 (connecting): ride the in-flight promise. 0 (disconnected)
+  // or 3 (disconnecting): start a fresh connect — previously an old resolved
+  // promise could be awaited here, letting requests run against a closed
+  // connection and throwing on the first query.
+  if (state !== 2 || !cached.promise) {
     cached.promise = mongoose.connect(MONGO_URI, {
       bufferCommands: false,
       autoIndex: false,
@@ -38,14 +45,16 @@ async function ensureDb() {
     }).then((m) => {
       console.log('MongoDB connected successfully');
       return m;
+    }).catch((err) => {
+      cached.promise = null;
+      cached.conn = null;
+      throw err;
     });
   }
 
   try {
     cached.conn = await cached.promise;
   } catch (err) {
-    cached.promise = null;
-    cached.conn = null;
     console.error('MongoDB connect error:', err.message);
     throw err;
   }

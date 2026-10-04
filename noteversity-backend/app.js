@@ -45,6 +45,9 @@ app.get('/uploads/:filename', requireAuth, async (req, res) => {
     }
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Filenames are immutable content — let the browser cache for a day so
+    // repeat previews/downloads never re-hit the serverless function.
+    res.setHeader('Cache-Control', 'private, max-age=86400, immutable');
     stream.pipe(res);
     stream.on('error', () => {
       if (!res.headersSent) res.status(500);

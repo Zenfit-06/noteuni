@@ -832,9 +832,18 @@ function switchView(name){
 /* ---------------- DASHBOARD ---------------- */
 async function renderDashboard(){
   try {
-    const res = await fetch(`${API_BASE}/api/dashboard`, {
+    let res = await fetch(`${API_BASE}/api/dashboard`, {
       headers: getAuthHeaders()
     });
+    if (res.status === 401) {
+      // Never demote an admin to a fresh guest over a 401 — surface it instead.
+      if (isAdmin()) {
+        showToast('Admin session expired — please sign in again.');
+      } else {
+        await refreshGuestSession();
+        res = await fetch(`${API_BASE}/api/dashboard`, { headers: getAuthHeaders() });
+      }
+    }
     if(res.ok){
       const data = await res.json();
       
@@ -928,13 +937,18 @@ async function fetchNotes(){
       updateContribStat();
       updateTotalResStat();
     } else if (res.status === 401) {
-      await refreshGuestSession();
-      const retryRes = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
-      if (retryRes.ok) {
-        notes = await retryRes.json();
-        renderNotes();
-        updateContribStat();
-        updateTotalResStat();
+      // Never demote an admin to a fresh guest over a 401 — surface it instead.
+      if (isAdmin()) {
+        showToast('Admin session expired — please sign in again.');
+      } else {
+        await refreshGuestSession();
+        const retryRes = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
+        if (retryRes.ok) {
+          notes = await retryRes.json();
+          renderNotes();
+          updateContribStat();
+          updateTotalResStat();
+        }
       }
     } else {
       if (!notes || notes.length === 0) {
@@ -990,13 +1004,18 @@ async function fetchPyqs(){
       updateContribStat();
       updateTotalResStat();
     } else if (res.status === 401) {
-      await refreshGuestSession();
-      const retryRes = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
-      if (retryRes.ok) {
-        pyqs = await retryRes.json();
-        renderPyqs();
-        updateContribStat();
-        updateTotalResStat();
+      // Never demote an admin to a fresh guest over a 401 — surface it instead.
+      if (isAdmin()) {
+        showToast('Admin session expired — please sign in again.');
+      } else {
+        await refreshGuestSession();
+        const retryRes = await fetch(url, { headers: getAuthHeaders(), credentials: 'include' });
+        if (retryRes.ok) {
+          pyqs = await retryRes.json();
+          renderPyqs();
+          updateContribStat();
+          updateTotalResStat();
+        }
       }
     } else {
       if (!pyqs || pyqs.length === 0) {

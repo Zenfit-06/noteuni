@@ -26,20 +26,26 @@ const ADMIN_EMAIL = 'admin@akgec.ac.in';
 // Simple in-memory rate limiter (per warm serverless instance; each instance
 // also enforces it, and bcrypt cost throttles guessing regardless).
 const rateBuckets = new Map();
-function rateLimit(key, max, windowMs) {
+function checkRateLimit(key, max, windowMs) {
   const now = Date.now();
   const hits = (rateBuckets.get(key) || []).filter((t) => now - t < windowMs);
-  if (hits.length >= max) {
-    rateBuckets.set(key, hits);
-    return false;
-  }
-  hits.push(now);
   rateBuckets.set(key, hits);
   if (rateBuckets.size > 10000) {
     for (const [k, v] of rateBuckets) {
       if (v.every((t) => now - t >= windowMs)) rateBuckets.delete(k);
     }
   }
+  return hits.length < max;
+}
+function recordRateHit(key) {
+  const hits = rateBuckets.get(key) || [];
+  hits.push(Date.now());
+  rateBuckets.set(key, hits);
+}
+// Check + record in one call — for endpoints where every request counts.
+function rateLimit(key, max, windowMs) {
+  if (!checkRateLimit(key, max, windowMs)) return false;
+  recordRateHit(key);
   return true;
 }
 
@@ -130,7 +136,8 @@ router.get('/me', async (req, res) => {
 // password is never stored, logged, or echoed. Generic errors only.
 router.post('/admin/login', async (req, res) => {
   try {
-    if (!rateLimit('admin-login:' + (req.ip || 'unknown'), 5, 15 * 60 * 1000)) {
+    const adminLimiterKey = 'admin-login:' + (req.ip || 'unknown');
+    if (!checkRateLimit(adminLimiterKey, 5, 15 * 60 * 1000)) {
       return res.status(429).json({ message: 'Too many login attempts. Try again in 15 minutes.' });
     }
 
@@ -150,6 +157,8 @@ router.post('/admin/login', async (req, res) => {
       match = (password === hash);
     }
     if (!match) {
+      // Only failed password attempts burn the 5-per-15-minute budget.
+      recordRateHit(adminLimiterKey);
       return res.status(401).json({ message: 'Invalid admin credentials' });
     }
 
