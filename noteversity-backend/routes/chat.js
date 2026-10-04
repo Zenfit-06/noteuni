@@ -17,12 +17,12 @@ router.delete('/history', requireAuth, (req, res) => {
 
 // POST /api/chat/ask — Ask AKGEC AI assistant (reads relevant notes via
 // extracted text + generates the answer; the transcript is kept client-side)
+//
+// NOTE: do not listen for `req.on('close')` to detect client aborts here — on
+// Vercel's runtime that event fires as soon as the request body is consumed,
+// which silently dropped every real answer. The response-path checks below
+// (res.writableEnded / res.destroyed) are the reliable abort test.
 router.post('/ask', requireAuth, async (req, res) => {
-  let clientAborted = false;
-  req.on('close', () => {
-    clientAborted = true;
-  });
-
   try {
     const { message, question, subject, detailed, history: clientHistory } = req.body;
     const query = (question || message || '').trim();
@@ -64,14 +64,10 @@ router.post('/ask', requireAuth, async (req, res) => {
     }
     console.log(`[ChatBot] /ask done in ${Date.now() - t0}ms via ${result.modelUsed || '?'}`);
 
-    if (clientAborted) {
-      console.log('[ChatBot] Request aborted by client. Skipping response delivery.');
-      return;
-    }
-
+    if (res.writableEnded || res.destroyed) return;
     res.json(result);
   } catch (err) {
-    if (clientAborted) return;
+    if (res.writableEnded || res.destroyed) return;
     console.error('[ChatBot Error]');
     res.status(500).json({
       message: err.message || 'Failed to generate answer from AI',

@@ -357,10 +357,12 @@ async function answerAcademicQuery({ question, subject = 'All', detailed = true,
   // With no subject filter the pool spans every subject, so cast a wide net for
   // keyword matching; keyword scoring narrows it to the truly relevant few.
   const poolSize = normSub === 'All' ? 40 : 8;
+  const ragT0 = Date.now();
   const [notes, pyqs] = await Promise.all([
     Note.find(filter).sort({ downloads: -1, createdAt: -1 }).limit(poolSize).lean(),
     Pyq.find(filter).sort({ downloads: -1, createdAt: -1 }).limit(normSub === 'All' ? 20 : 6).lean(),
   ]);
+  console.log(`[AI Service] RAG pool fetched in ${Date.now() - ragT0}ms: ${notes.length} notes, ${pyqs.length} pyqs (subject=${normSub})`);
 
   const candidateDocs = [
     ...notes.map((n) => ({ ...n, docType: 'Note' })),
