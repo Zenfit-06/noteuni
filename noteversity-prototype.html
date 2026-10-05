@@ -356,8 +356,8 @@
   }
   @keyframes skelShimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
 
-  /* modal */
-  .modal-bg{position:fixed;inset:0;background:rgba(20,38,63,0.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  /* modal — z-index 200 keeps dialogs above the mobile drawer (100) and its backdrop (90) */
+  .modal-bg{position:fixed;inset:0;background:rgba(20,38,63,0.45);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
   .modal-bg.show{display:flex;}
   .modal{background:var(--paper-raised);border-radius:5px;padding:26px;width:100%;max-width:420px;box-shadow:0 10px 40px rgba(0,0,0,0.25);}
   .modal h3{margin:0 0 16px;font-size:16px;font-weight:700;color:var(--head);}
@@ -455,8 +455,10 @@
     display:none;position:fixed;inset:0;background:rgba(5,47,64,0.45);
     z-index:90;opacity:0;pointer-events:none;transition:opacity .2s ease;
   }
+  #btnAdminLoginTop{display:none;} /* desktop uses the sidebar button; topbar shortcut is mobile-only */
   @media(max-width:900px){
     .sidebar-toggle{display:inline-flex;}
+    #btnAdminLoginTop{display:inline-flex;}
     .sidebar{
       position:fixed;left:0;top:0;bottom:0;z-index:100;
       transform:translateX(-105%);transition:transform .25s ease;
@@ -589,6 +591,7 @@
         <input placeholder="Search notes, PYQs, subjects…" id="globalSearch">
       </div>
       <button id="themeToggle" class="theme-toggle" style="margin-left:auto;" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+      <button id="btnAdminLoginTop" onclick="openAdminLogin()" title="Admin sign in" aria-label="Admin sign in" style="align-items:center; justify-content:center; width:34px; height:34px; border:1.5px solid var(--rule); border-radius:4px; background:none; font-size:15px; cursor:pointer;">🛡️</button>
     </div>
 
     <!-- DASHBOARD -->
@@ -1892,10 +1895,15 @@ function populateUserUI() {
   const btnExitAdmin = document.getElementById('btnExitAdmin');
   if (btnAdminLogin) btnAdminLogin.style.display = admin ? 'none' : 'flex';
   if (btnExitAdmin) btnExitAdmin.style.display = admin ? 'flex' : 'none';
+
+  // Mobile topbar admin shortcut (CSS shows it only under 900px)
+  const btnAdminTop = document.getElementById('btnAdminLoginTop');
+  if (btnAdminTop) btnAdminTop.style.display = admin ? 'none' : '';
 }
 
 /* ---------------- ADMIN LOGIN (bottom-left icon) ---------------- */
 function openAdminLogin() {
+  document.body.classList.remove('sidebar-open'); // mobile: drop the drawer so it can't cover the dialog
   document.getElementById('adminModal').classList.add('show');
   const errBox = document.getElementById('adminLoginError');
   errBox.style.display = 'none';
