@@ -26,3 +26,8 @@ gui-test-screenshots/
 *.log
 .DS_Store
 Thumbs.db
+
+# Tooling / session artifacts (never commit)
+.zcode/
+__pycache__/
+*.pyc
